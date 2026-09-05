@@ -1,0 +1,885 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>English World Practice - Flags & Sentences</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome Icons CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts Inter & Lexend -->
+    <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        heading: ['Lexend', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            500: '#0284c7',
+                            600: '#0284c7',
+                            700: '#0369a1',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* Custom Keyframe Animations */
+        @keyframes pulseSuccess {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        @keyframes shakeError {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-8px); }
+            40%, 80% { transform: translateX(8px); }
+        }
+        @keyframes popIn {
+            0% { opacity: 0; transform: scale(0.9); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+        .animate-pop-in {
+            animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+        .animate-shake {
+            animation: shakeError 0.4s ease-in-out;
+        }
+        .animate-pulse-success {
+            animation: pulseSuccess 0.5s ease-in-out;
+        }
+
+        /* Input letter style */
+        .letter-box {
+            width: 2.8rem;
+            height: 3.2rem;
+            text-align: center;
+            font-size: 1.5rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            border-radius: 0.5rem;
+            transition: all 0.2s ease;
+        }
+        @media (min-width: 640px) {
+            .letter-box {
+                width: 3.5rem;
+                height: 4rem;
+                font-size: 2rem;
+            }
+        }
+
+        /* Unscramble Word Tile */
+        .word-tile {
+            user-select: none;
+            touch-action: manipulation;
+            transition: all 0.15s ease;
+        }
+        .word-tile:active {
+            transform: scale(0.95);
+        }
+    </style>
+</head>
+<body class="bg-slate-100 min-h-screen font-sans text-slate-800 flex flex-col justify-between selection:bg-sky-200">
+
+    <!-- Top Header -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
+        <div class="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="bg-sky-500 text-white p-2 rounded-xl shadow-md flex items-center justify-center">
+                    <i class="fa-solid fa-earth-americas text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="font-heading text-lg sm:text-xl font-bold text-slate-800 leading-tight">English Country Practice</h1>
+                    <p class="text-xs text-slate-500 font-medium">Interactive Learning for Kids & Students</p>
+                </div>
+            </div>
+
+            <!-- Quiz Progress Summary Badge -->
+            <div id="top-progress-badge" class="hidden sm:flex items-center space-x-2 bg-slate-100 px-3 py-1.5 rounded-lg border border-slate-200">
+                <i class="fa-solid fa-trophy text-amber-500 text-sm"></i>
+                <span class="text-xs font-semibold text-slate-700">Question <span id="current-q-num">1</span> of <span id="total-q-num">16</span></span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="max-w-3xl w-full mx-auto px-4 py-6 flex-grow flex flex-col justify-center">
+
+        <!-- START SCREEN -->
+        <div id="start-screen" class="bg-white rounded-3xl p-6 sm:p-10 shadow-xl border border-slate-200/80 text-center animate-pop-in">
+            <div class="w-20 h-20 bg-sky-100 text-sky-600 rounded-full flex items-center justify-center mx-auto mb-5 shadow-inner">
+                <i class="fa-solid fa-flag text-4xl"></i>
+            </div>
+            <h2 class="font-heading text-2xl sm:text-3xl font-extrabold text-slate-800 mb-3">Welcome to English Practice!</h2>
+            <p class="text-slate-600 mb-6 text-sm sm:text-base leading-relaxed max-w-lg mx-auto">
+                Test your knowledge in two fun sections:<br>
+                <span class="font-semibold text-sky-600">Part 1:</span> Fill in missing letters for Country Flags.<br>
+                <span class="font-semibold text-sky-600">Part 2:</span> Unscramble English sentences.
+            </p>
+
+            <div class="bg-sky-50/80 rounded-2xl p-4 mb-8 text-left max-w-md mx-auto border border-sky-100 text-xs sm:text-sm text-sky-900 space-y-2">
+                <div class="flex items-center space-x-2">
+                    <i class="fa-solid fa-circle-check text-sky-500"></i>
+                    <span>Audio plays automatically for flag questions.</span>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <i class="fa-solid fa-circle-check text-sky-500"></i>
+                    <span>Press <kbd class="px-1.5 py-0.5 bg-white border rounded text-xs shadow-sm font-mono text-slate-700">Enter</kbd> on keyboard to quickly check answers.</span>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <i class="fa-solid fa-circle-check text-sky-500"></i>
+                    <span>3 failed attempts will reveal the correct answer.</span>
+                </div>
+            </div>
+
+            <button onclick="startQuiz()" class="w-full sm:w-auto px-8 py-4 bg-sky-500 hover:bg-sky-600 active:scale-95 text-white font-heading font-bold text-lg rounded-2xl shadow-lg shadow-sky-500/30 transition-all flex items-center justify-center space-x-3 mx-auto">
+                <span>Start Exercise Now</span>
+                <i class="fa-solid fa-arrow-right"></i>
+            </button>
+        </div>
+
+        <!-- QUIZ CONTAINER (Hidden initially) -->
+        <div id="quiz-container" class="hidden flex-col space-y-4">
+
+            <!-- Progress Bar Card -->
+            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
+                <div class="flex justify-between items-center mb-2 text-xs sm:text-sm font-bold text-slate-600">
+                    <span id="section-title-tag" class="uppercase tracking-wider text-sky-600 bg-sky-50 px-2.5 py-1 rounded-md border border-sky-200/60">Part 1: Country Flags</span>
+                    <span id="progress-text-sm">Q 1/16</span>
+                </div>
+                <div class="w-full bg-slate-100 h-3 rounded-full overflow-hidden p-0.5 border border-slate-200">
+                    <div id="progress-bar-fill" class="bg-gradient-to-r from-sky-400 to-sky-600 h-full rounded-full transition-all duration-300 w-0"></div>
+                </div>
+            </div>
+
+            <!-- Main Question Card -->
+            <div id="question-card" class="bg-white rounded-3xl p-5 sm:p-8 shadow-xl border border-slate-200 relative overflow-hidden transition-all duration-300">
+                
+                <!-- Hearts / Lives indicator -->
+                <div class="flex justify-between items-center mb-4">
+                    <div class="flex items-center space-x-1 text-slate-400 text-xs font-semibold">
+                        <span>Attempts left:</span>
+                        <div id="attempts-container" class="flex space-x-1 ml-1 text-amber-500 text-sm">
+                            <i class="fa-solid fa-heart"></i>
+                            <i class="fa-solid fa-heart"></i>
+                            <i class="fa-solid fa-heart"></i>
+                        </div>
+                    </div>
+
+                    <!-- Speaker Button (Re-listen button) -->
+                    <button id="speaker-btn" onclick="replayAudio()" class="flex items-center space-x-2 bg-sky-50 hover:bg-sky-100 active:scale-95 text-sky-700 px-3 py-1.5 rounded-xl border border-sky-200 text-xs sm:text-sm font-semibold transition-all">
+                        <i class="fa-solid fa-volume-high text-base text-sky-600"></i>
+                        <span>Listen Again</span>
+                    </button>
+                </div>
+
+                <!-- PART 1: FLAG & SPELLING AREA -->
+                <div id="part1-area" class="flex flex-col items-center space-y-6">
+                    
+                    <!-- Flag Image Box -->
+                    <div class="relative w-full max-w-xs h-36 sm:h-44 bg-slate-50 border border-slate-200 rounded-2xl overflow-hidden flex items-center justify-center p-2 shadow-inner">
+                        <!-- High quality SVG / CDN Flag -->
+                        <img id="flag-img" src="" alt="Country Flag" class="max-w-full max-h-full object-contain rounded drop-shadow-md transition-opacity duration-200" onerror="handleFlagError(this)">
+                        
+                        <!-- Fallback Emoji if image fails -->
+                        <div id="flag-emoji-fallback" class="hidden text-7xl sm:text-8xl select-none"></div>
+                    </div>
+
+                    <!-- Letter Blank Input Boxes Area -->
+                    <div id="letter-inputs-wrapper" class="flex flex-wrap justify-center items-center gap-2 sm:gap-3 py-2 w-full">
+                        <!-- Dynamic letter inputs generated here -->
+                    </div>
+                </div>
+
+                <!-- PART 2: SENTENCE UNSCRAMBLE AREA -->
+                <div id="part2-area" class="hidden flex-col items-center space-y-6">
+                    <div class="text-center">
+                        <p class="text-slate-500 text-xs sm:text-sm uppercase tracking-wide font-bold mb-1">Unscramble the sentence</p>
+                        <h3 class="text-base sm:text-lg font-heading font-semibold text-slate-700">Tap the words in the correct order:</h3>
+                    </div>
+
+                    <!-- Target Slots / Assembled Answer Container -->
+                    <div id="assembled-sentence-box" class="w-full min-h-[60px] bg-slate-50 border-2 border-dashed border-slate-300 rounded-2xl p-3 flex flex-wrap gap-2 items-center justify-center transition-colors">
+                        <span id="placeholder-hint" class="text-slate-400 text-sm font-medium">Click words below to place them here...</span>
+                    </div>
+
+                    <!-- Word Bank Pool -->
+                    <div id="word-bank-box" class="flex flex-wrap justify-center gap-2 sm:gap-3 pt-2 max-w-xl">
+                        <!-- Word tiles inserted dynamically -->
+                    </div>
+                </div>
+
+                <!-- Feedback Message Box (Praise / Error / Reveal) -->
+                <div id="feedback-box" class="hidden my-4 p-4 rounded-2xl text-center font-heading font-bold text-sm sm:text-base animate-pop-in">
+                    <div id="feedback-text" class="flex items-center justify-center space-x-2"></div>
+                </div>
+
+                <!-- Action Controls: Check & Next Buttons -->
+                <div class="mt-6 flex flex-col sm:flex-row items-center justify-center gap-3">
+                    <button id="check-btn" onclick="checkAnswer()" class="w-full sm:w-auto px-8 py-3.5 bg-sky-500 hover:bg-sky-600 active:scale-95 text-white font-heading font-bold text-base rounded-xl shadow-lg shadow-sky-500/25 transition-all flex items-center justify-center space-x-2">
+                        <i class="fa-solid fa-circle-check"></i>
+                        <span>Check Answer</span>
+                    </button>
+
+                    <button id="next-btn" onclick="nextQuestion()" class="hidden w-full sm:w-auto px-8 py-3.5 bg-emerald-500 hover:bg-emerald-600 active:scale-95 text-white font-heading font-bold text-base rounded-xl shadow-lg shadow-emerald-500/25 transition-all flex items-center justify-center space-x-2">
+                        <span>Next Question</span>
+                        <i class="fa-solid fa-arrow-right"></i>
+                    </button>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- RESULTS / END SCREEN -->
+        <div id="results-screen" class="hidden bg-white rounded-3xl p-6 sm:p-10 shadow-xl border border-slate-200 text-center animate-pop-in">
+            <div id="result-icon-bg" class="w-20 h-20 bg-amber-100 text-amber-500 rounded-full flex items-center justify-center mx-auto mb-4 shadow-inner">
+                <i class="fa-solid fa-award text-4xl"></i>
+            </div>
+
+            <h2 class="font-heading text-2xl sm:text-3xl font-extrabold text-slate-800 mb-2">Quiz Completed!</h2>
+            <p class="text-slate-500 text-sm mb-6">Great job finishing all exercise questions!</p>
+
+            <!-- Score Stats Grid -->
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-8 max-w-md mx-auto">
+                <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200">
+                    <span class="block text-xs text-slate-500 font-semibold mb-1">Total Questions</span>
+                    <span id="stat-total" class="text-2xl font-heading font-extrabold text-slate-800">16</span>
+                </div>
+                <div class="bg-emerald-50 p-4 rounded-2xl border border-emerald-100">
+                    <span class="block text-xs text-emerald-600 font-semibold mb-1">Correct</span>
+                    <span id="stat-correct" class="text-2xl font-heading font-extrabold text-emerald-600">0</span>
+                </div>
+                <div class="bg-amber-50 p-4 rounded-2xl border border-amber-100 col-span-2 sm:col-span-1">
+                    <span class="block text-xs text-amber-600 font-semibold mb-1">Accuracy</span>
+                    <span id="stat-accuracy" class="text-2xl font-heading font-extrabold text-amber-600">0%</span>
+                </div>
+            </div>
+
+            <button onclick="restartQuiz()" class="w-full sm:w-auto px-8 py-4 bg-sky-500 hover:bg-sky-600 active:scale-95 text-white font-heading font-bold text-lg rounded-2xl shadow-lg shadow-sky-500/30 transition-all flex items-center justify-center space-x-3 mx-auto">
+                <i class="fa-solid fa-rotate-right"></i>
+                <span>Try Again</span>
+            </button>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="py-4 text-center text-xs text-slate-400 border-t border-slate-200 bg-white">
+        <p>Designed for GitHub Pages • Interactive English Vocabulary & Grammar</p>
+    </footer>
+
+    <script>
+        /* ==========================================================================
+           DATA DEFINITIONS
+           ========================================================================== */
+        
+        // Part 1: Country Vocabulary & Flag Images (Stable Flagcdn SVGs + Emoji fallback)
+        const PART1_QUESTIONS = [
+            { id: 1, type: 'flag', word: 'Brazil', code: 'br', emoji: '🇧🇷' },
+            { id: 2, type: 'flag', word: 'Egypt', code: 'eg', emoji: '🇪🇬' },
+            { id: 3, type: 'flag', word: 'The UK', code: 'gb', emoji: '🇬🇧' },
+            { id: 4, type: 'flag', word: 'Russia', code: 'ru', emoji: '🇷🇺' },
+            { id: 5, type: 'flag', word: 'Spain', code: 'es', emoji: '🇪🇸' },
+            { id: 6, type: 'flag', word: 'Thailand', code: 'th', emoji: '🇹🇭' },
+            { id: 7, type: 'flag', word: 'Australia', code: 'au', emoji: '🇦🇺' },
+            { id: 8, type: 'flag', word: 'The USA', code: 'us', emoji: '🇺🇸' }
+        ];
+
+        // Part 2: Sentence Unscramble
+        const PART2_QUESTIONS = [
+            { id: 9, type: 'sentence', text: 'Where are you from?' },
+            { id: 10, type: 'sentence', text: 'Where is he from?' },
+            { id: 11, type: 'sentence', text: 'Where is she from?' },
+            { id: 12, type: 'sentence', text: 'Where are they from?' },
+            { id: 13, type: 'sentence', text: 'I’m from Australia' },
+            { id: 14, type: 'sentence', text: 'He’s from Brazil' },
+            { id: 15, type: 'sentence', text: 'She’s from Russia' },
+            { id: 16, type: 'sentence', text: 'They’re from Egypt' }
+        ];
+
+        // Compliments list
+        const PRAISES = ['Well done!', 'Good job!', 'Excellent!', 'Very good!'];
+
+        /* ==========================================================================
+           STATE VARIABLES
+           ========================================================================== */
+        let activeQuestions = [];
+        let currentQuestionIndex = 0;
+        let failedAttempts = 0;
+        let scoreCorrectFirstTry = 0;
+        let scoreTotalCorrect = 0;
+        let currentSelectedWords = []; // For sentence unscramble
+        let selectedVoice = null;
+        let audioCtx = null;
+
+        /* ==========================================================================
+           AUDIO & VOICE SYNTHESIS
+           ========================================================================== */
+
+        // Initialize Web Audio API for synthetic sound effects
+        function getAudioContext() {
+            if (!audioCtx) {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                if (AudioContext) {
+                    audioCtx = new AudioContext();
+                }
+            }
+            if (audioCtx && audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+            return audioCtx;
+        }
+
+        // Sound effect: Happy Success Chime
+        function playSuccessSound() {
+            try {
+                const ctx = getAudioContext();
+                if (!ctx) return;
+                
+                const now = ctx.currentTime;
+                const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
+                notes.forEach((freq, idx) => {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(freq, now + idx * 0.08);
+                    
+                    gain.gain.setValueAtTime(0.2, now + idx * 0.08);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.08 + 0.3);
+                    
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start(now + idx * 0.08);
+                    osc.stop(now + idx * 0.08 + 0.3);
+                });
+            } catch (e) { console.log('Audio error:', e); }
+        }
+
+        // Sound effect: Wrong Buzz
+        function playErrorSound() {
+            try {
+                const ctx = getAudioContext();
+                if (!ctx) return;
+
+                const now = ctx.currentTime;
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(180, now);
+                osc.frequency.exponentialRampToValueAtTime(110, now + 0.25);
+
+                gain.gain.setValueAtTime(0.25, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
+
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start(now);
+                osc.stop(now + 0.25);
+            } catch (e) { console.log('Audio error:', e); }
+        }
+
+        // Speech Synthesis setup (Female voice selection)
+        function initVoices() {
+            if ('speechSynthesis' in window) {
+                const updateVoices = () => {
+                    const voices = window.speechSynthesis.getVoices();
+                    // Priority search for English female voice
+                    selectedVoice = voices.find(v => v.lang.startsWith('en') && (
+                        v.name.includes('Female') || 
+                        v.name.includes('Zira') || 
+                        v.name.includes('Samantha') || 
+                        v.name.includes('Google US English') ||
+                        v.name.includes('Victoria') ||
+                        v.name.includes('Karen')
+                    )) || voices.find(v => v.lang.startsWith('en')) || null;
+                };
+
+                updateVoices();
+                if (window.speechSynthesis.onvoiceschanged !== undefined) {
+                    window.speechSynthesis.onvoiceschanged = updateVoices;
+                }
+            }
+        }
+        initVoices();
+
+        // Speak text slowly and clearly
+        function speakText(text, callback) {
+            if (!('speechSynthesis' in window)) return;
+            window.speechSynthesis.cancel(); // Stop prior audio
+
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.rate = 0.8; // Slow rate as requested
+            utterance.pitch = 1.1; // Slightly higher pitch for female feel
+            if (selectedVoice) {
+                utterance.voice = selectedVoice;
+            }
+
+            if (callback) {
+                utterance.onend = callback;
+            }
+
+            window.speechSynthesis.speak(utterance);
+        }
+
+        /* ==========================================================================
+           STREAMING_CHUNK:Implementing Fisher-Yates shuffle & game initialization logic...
+           ========================================================================== */
+
+        // Array Shuffle Helper (Fisher-Yates)
+        function shuffleArray(arr) {
+            const array = [...arr];
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        // Start Quiz Procedure
+        function startQuiz() {
+            // Prepare audio context on user interaction
+            getAudioContext();
+
+            // Shuffle questions separately for Part 1 and Part 2, then combine
+            const shuffledPart1 = shuffleArray(PART1_QUESTIONS);
+            const shuffledPart2 = shuffleArray(PART2_QUESTIONS);
+            activeQuestions = [...shuffledPart1, ...shuffledPart2];
+
+            currentQuestionIndex = 0;
+            scoreCorrectFirstTry = 0;
+            scoreTotalCorrect = 0;
+
+            document.getElementById('start-screen').classList.add('hidden');
+            document.getElementById('quiz-container').classList.remove('hidden');
+            document.getElementById('results-screen').classList.add('hidden');
+            document.getElementById('top-progress-badge').classList.remove('hidden');
+
+            document.getElementById('total-q-num').textContent = activeQuestions.length;
+
+            loadQuestion();
+        }
+
+        /* ==========================================================================
+           STREAMING_CHUNK:Building Question loader and dynamic UI renderer...
+           ========================================================================== */
+
+        function loadQuestion() {
+            failedAttempts = 0;
+            updateHeartsUI();
+
+            const q = activeQuestions[currentQuestionIndex];
+            
+            // UI Progress Updates
+            document.getElementById('current-q-num').textContent = currentQuestionIndex + 1;
+            document.getElementById('progress-text-sm').textContent = `Q ${currentQuestionIndex + 1}/${activeQuestions.length}`;
+            const pct = ((currentQuestionIndex) / activeQuestions.length) * 100;
+            document.getElementById('progress-bar-fill').style.width = `${pct}%`;
+
+            // Reset Controls & Feedback
+            document.getElementById('feedback-box').className = 'hidden my-4 p-4 rounded-2xl text-center font-heading font-bold text-sm sm:text-base animate-pop-in';
+            document.getElementById('check-btn').classList.remove('hidden');
+            document.getElementById('next-btn').classList.add('hidden');
+
+            const card = document.getElementById('question-card');
+            card.classList.remove('animate-shake', 'animate-pulse-success');
+
+            if (q.type === 'flag') {
+                // PART 1 SETUP
+                document.getElementById('section-title-tag').textContent = 'Part 1: Country Flags';
+                document.getElementById('speaker-btn').classList.remove('hidden');
+                document.getElementById('part1-area').classList.remove('hidden');
+                document.getElementById('part2-area').classList.add('hidden');
+
+                // Render Flag Image & Fallback
+                const imgEl = document.getElementById('flag-img');
+                const emojiEl = document.getElementById('flag-emoji-fallback');
+                imgEl.classList.remove('hidden');
+                emojiEl.classList.add('hidden');
+                emojiEl.textContent = q.emoji;
+                imgEl.src = `https://flagcdn.com/w640/${q.code}.png`;
+
+                // Render Input Letter Blanks
+                renderLetterInputs(q.word);
+
+                // Auto speak word for Part 1
+                setTimeout(() => {
+                    speakText(q.word);
+                }, 300);
+
+            } else {
+                // PART 2 SETUP
+                document.getElementById('section-title-tag').textContent = 'Part 2: Sentence Unscramble';
+                document.getElementById('speaker-btn').classList.add('hidden'); // "Không có phần nghe" for Part 2 initially
+                document.getElementById('part1-area').classList.add('hidden');
+                document.getElementById('part2-area').classList.remove('hidden');
+
+                // Render Sentence Word Tiles
+                renderSentenceUnscramble(q.text);
+            }
+        }
+
+        // Render Fill-in-the-blank letter boxes
+        function renderLetterInputs(targetWord) {
+            const container = document.getElementById('letter-inputs-wrapper');
+            container.innerHTML = '';
+
+            // Split into words if multiple words (e.g., "The USA", "The UK")
+            const words = targetWord.split(' ');
+
+            words.forEach((w, wIdx) => {
+                const wordGroup = document.createElement('div');
+                wordGroup.className = 'flex items-center space-x-1 sm:space-x-2 my-1';
+
+                for (let i = 0; i < w.length; i++) {
+                    const input = document.createElement('input');
+                    input.type = 'text';
+                    input.maxLength = 1;
+                    input.className = 'letter-box border-2 border-slate-300 focus:border-sky-500 focus:ring-2 focus:ring-sky-200 outline-none text-slate-800 bg-white shadow-sm font-heading uppercase text-center';
+                    input.dataset.wordIdx = wIdx;
+                    input.dataset.charIdx = i;
+
+                    // Handle typing navigation
+                    input.addEventListener('input', (e) => {
+                        const val = e.target.value;
+                        if (val.length === 1) {
+                            // Find next input box
+                            const allInputs = Array.from(container.querySelectorAll('input'));
+                            const currIdx = allInputs.indexOf(input);
+                            if (currIdx < allInputs.length - 1) {
+                                allInputs[currIdx + 1].focus();
+                            }
+                        }
+                    });
+
+                    // Handle Backspace navigation
+                    input.addEventListener('keydown', (e) => {
+                        if (e.key === 'Backspace' && !input.value) {
+                            const allInputs = Array.from(container.querySelectorAll('input'));
+                            const currIdx = allInputs.indexOf(input);
+                            if (currIdx > 0) {
+                                allInputs[currIdx - 1].focus();
+                            }
+                        } else if (e.key === 'Enter') {
+                            e.preventDefault();
+                            checkAnswer();
+                        }
+                    });
+
+                    wordGroup.appendChild(input);
+                }
+
+                container.appendChild(wordGroup);
+
+                // Add space gap between words
+                if (wIdx < words.length - 1) {
+                    const spaceDivider = document.createElement('div');
+                    spaceDivider.className = 'w-4 sm:w-6';
+                    container.appendChild(spaceDivider);
+                }
+            });
+
+            // Focus first input automatically
+            setTimeout(() => {
+                const firstInput = container.querySelector('input');
+                if (firstInput) firstInput.focus();
+            }, 100);
+        }
+
+        // Render Sentence Unscramble Tiles
+        function renderSentenceUnscramble(sentenceText) {
+            currentSelectedWords = [];
+            const assembledBox = document.getElementById('assembled-sentence-box');
+            const wordBankBox = document.getElementById('word-bank-box');
+
+            assembledBox.innerHTML = '<span id="placeholder-hint" class="text-slate-400 text-sm font-medium">Click words below to place them here...</span>';
+            wordBankBox.innerHTML = '';
+
+            // Split sentence into words
+            const words = sentenceText.split(' ');
+            // Shuffle word tiles
+            const shuffledWords = shuffleArray(words.map((w, idx) => ({ id: idx, word: w })));
+
+            shuffledWords.forEach(item => {
+                const tile = document.createElement('button');
+                tile.className = 'word-tile bg-white border-2 border-slate-200 hover:border-sky-400 hover:bg-sky-50 text-slate-700 font-heading font-semibold text-sm sm:text-base px-3.5 py-2 rounded-xl shadow-sm transition-all';
+                tile.textContent = item.word;
+                tile.dataset.tileId = item.id;
+                tile.onclick = () => selectWordTile(item, tile);
+                wordBankBox.appendChild(tile);
+            });
+        }
+
+        // Word tile select/unselect logic
+        function selectWordTile(item, tileElement) {
+            if (failedAttempts >= 3) return; // Prevent edits if failed max times
+
+            const assembledBox = document.getElementById('assembled-sentence-box');
+            const hint = document.getElementById('placeholder-hint');
+            if (hint) hint.remove();
+
+            if (currentSelectedWords.some(w => w.id === item.id)) {
+                // Remove from assembled area
+                currentSelectedWords = currentSelectedWords.filter(w => w.id !== item.id);
+                tileElement.classList.remove('opacity-30', 'pointer-events-none');
+                
+                // Refresh assembled UI
+                refreshAssembledSentenceUI();
+            } else {
+                // Add to assembled area
+                currentSelectedWords.push(item);
+                tileElement.classList.add('opacity-30', 'pointer-events-none');
+
+                // Append chip to assembled box
+                const chip = document.createElement('button');
+                chip.className = 'word-tile bg-sky-500 text-white font-heading font-semibold text-sm sm:text-base px-3.5 py-2 rounded-xl shadow-sm transition-all flex items-center space-x-1 animate-pop-in';
+                chip.innerHTML = `<span>${item.word}</span> <i class="fa-solid fa-xmark text-xs opacity-70"></i>`;
+                chip.dataset.chipId = item.id;
+                chip.onclick = () => {
+                    selectWordTile(item, tileElement);
+                };
+                assembledBox.appendChild(chip);
+            }
+        }
+
+        function refreshAssembledSentenceUI() {
+            const assembledBox = document.getElementById('assembled-sentence-box');
+            assembledBox.innerHTML = '';
+
+            if (currentSelectedWords.length === 0) {
+                assembledBox.innerHTML = '<span id="placeholder-hint" class="text-slate-400 text-sm font-medium">Click words below to place them here...</span>';
+                return;
+            }
+
+            currentSelectedWords.forEach(item => {
+                const chip = document.createElement('button');
+                chip.className = 'word-tile bg-sky-500 text-white font-heading font-semibold text-sm sm:text-base px-3.5 py-2 rounded-xl shadow-sm transition-all flex items-center space-x-1 animate-pop-in';
+                chip.innerHTML = `<span>${item.word}</span> <i class="fa-solid fa-xmark text-xs opacity-70"></i>`;
+                chip.dataset.chipId = item.id;
+                chip.onclick = () => {
+                    const originalTile = document.querySelector(`[data-tile-id="${item.id}"]`);
+                    selectWordTile(item, originalTile);
+                };
+                assembledBox.appendChild(chip);
+            });
+        }
+
+        /* ==========================================================================
+           STREAMING_CHUNK:Implementing Answer Validation and Feedback mechanisms...
+           ========================================================================== */
+
+        function checkAnswer() {
+            const q = activeQuestions[currentQuestionIndex];
+            let isCorrect = false;
+            let userAnswerStr = '';
+            let targetAnswerStr = '';
+
+            if (q.type === 'flag') {
+                const inputs = Array.from(document.querySelectorAll('#letter-inputs-wrapper input'));
+                userAnswerStr = inputs.map(inp => inp.value.trim().toLowerCase()).join('');
+                targetAnswerStr = q.word.replace(/\s+/g, '').toLowerCase();
+
+                isCorrect = (userAnswerStr === targetAnswerStr);
+            } else {
+                userAnswerStr = currentSelectedWords.map(w => w.word).join(' ');
+                targetAnswerStr = q.text;
+
+                isCorrect = (userAnswerStr === targetAnswerStr);
+            }
+
+            if (isCorrect) {
+                handleSuccess(q);
+            } else {
+                handleFailure(q);
+            }
+        }
+
+        function handleSuccess(q) {
+            playSuccessSound();
+            
+            // Choose random praise
+            const randomPraise = PRAISES[Math.floor(Math.random() * PRAISES.length)];
+            
+            // Play praise audio
+            speakText(randomPraise);
+
+            // Record score stats
+            if (failedAttempts === 0) {
+                scoreCorrectFirstTry++;
+            }
+            scoreTotalCorrect++;
+
+            // Visual UI feedback
+            const feedbackBox = document.getElementById('feedback-box');
+            feedbackBox.className = 'my-4 p-4 rounded-2xl text-center font-heading font-bold text-sm sm:text-base bg-emerald-100 text-emerald-800 border border-emerald-200 animate-pop-in';
+            feedbackBox.innerHTML = `
+                <div class="flex items-center justify-center space-x-2">
+                    <i class="fa-solid fa-circle-check text-xl text-emerald-600"></i>
+                    <span>${randomPraise} Correct Answer!</span>
+                </div>
+            `;
+
+            // Highlights
+            document.getElementById('question-card').classList.add('animate-pulse-success');
+            document.getElementById('check-btn').classList.add('hidden');
+            document.getElementById('next-btn').classList.remove('hidden');
+
+            // Speak sentence/word if Part 2 or enable audio speaker button
+            if (q.type === 'sentence') {
+                document.getElementById('speaker-btn').classList.remove('hidden');
+                setTimeout(() => speakText(q.text), 400);
+            }
+        }
+
+        function handleFailure(q) {
+            failedAttempts++;
+            playErrorSound();
+            updateHeartsUI();
+
+            const card = document.getElementById('question-card');
+            card.classList.remove('animate-shake');
+            void card.offsetWidth; // Trigger reflow for animation restart
+            card.classList.add('animate-shake');
+
+            const feedbackBox = document.getElementById('feedback-box');
+
+            if (failedAttempts >= 3) {
+                // Exceeded allowed attempts -> Show correct answer
+                feedbackBox.className = 'my-4 p-4 rounded-2xl text-center font-heading font-bold text-sm sm:text-base bg-amber-100 text-amber-900 border border-amber-200 animate-pop-in';
+                
+                const targetText = (q.type === 'flag') ? q.word : q.text;
+
+                feedbackBox.innerHTML = `
+                    <div class="space-y-1">
+                        <div class="flex items-center justify-center space-x-2 text-red-600">
+                            <i class="fa-solid fa-circle-xmark text-lg"></i>
+                            <span>Maximum attempts reached!</span>
+                        </div>
+                        <div class="text-slate-700">Correct Answer: <strong class="text-sky-700 underline decoration-sky-400 font-extrabold">${targetText}</strong></div>
+                    </div>
+                `;
+
+                document.getElementById('check-btn').classList.add('hidden');
+                document.getElementById('next-btn').classList.remove('hidden');
+
+                // Read correct answer out loud
+                speakText(targetText);
+            } else {
+                // Less than 3 mistakes -> Reset question input for another try
+                feedbackBox.className = 'my-4 p-3 rounded-2xl text-center font-heading font-bold text-sm bg-rose-100 text-rose-800 border border-rose-200 animate-pop-in';
+                feedbackBox.innerHTML = `
+                    <div class="flex items-center justify-center space-x-2">
+                        <i class="fa-solid fa-triangle-exclamation text-rose-600"></i>
+                        <span>Incorrect! Please try again.</span>
+                    </div>
+                `;
+
+                // Reset inputs for current question
+                setTimeout(() => {
+                    resetCurrentQuestionInputs();
+                }, 400);
+            }
+        }
+
+        // Reset inputs when student makes a mistake
+        function resetCurrentQuestionInputs() {
+            const q = activeQuestions[currentQuestionIndex];
+            if (q.type === 'flag') {
+                const inputs = document.querySelectorAll('#letter-inputs-wrapper input');
+                inputs.forEach(inp => inp.value = '');
+                if (inputs.length > 0) inputs[0].focus();
+            } else {
+                renderSentenceUnscramble(q.text);
+            }
+        }
+
+        function updateHeartsUI() {
+            const container = document.getElementById('attempts-container');
+            container.innerHTML = '';
+            const remaining = Math.max(0, 3 - failedAttempts);
+
+            for (let i = 0; i < 3; i++) {
+                const heart = document.createElement('i');
+                if (i < remaining) {
+                    heart.className = 'fa-solid fa-heart text-amber-500';
+                } else {
+                    heart.className = 'fa-regular fa-heart text-slate-300';
+                }
+                container.appendChild(heart);
+            }
+        }
+
+        function replayAudio() {
+            const q = activeQuestions[currentQuestionIndex];
+            const textToSpeak = (q.type === 'flag') ? q.word : q.text;
+            speakText(textToSpeak);
+        }
+
+        function handleFlagError(img) {
+            img.classList.add('hidden');
+            const emojiEl = document.getElementById('flag-emoji-fallback');
+            emojiEl.classList.remove('hidden');
+        }
+
+        /* ==========================================================================
+           STREAMING_CHUNK:Handling Quiz navigation, End Game & Enter Key Listeners...
+           ========================================================================== */
+
+        function nextQuestion() {
+            currentQuestionIndex++;
+            if (currentQuestionIndex < activeQuestions.length) {
+                loadQuestion();
+            } else {
+                showResults();
+            }
+        }
+
+        function showResults() {
+            document.getElementById('quiz-container').classList.add('hidden');
+            document.getElementById('top-progress-badge').classList.add('hidden');
+            document.getElementById('results-screen').classList.remove('hidden');
+
+            const total = activeQuestions.length;
+            const accuracyPct = Math.round((scoreTotalCorrect / total) * 100);
+
+            document.getElementById('stat-total').textContent = total;
+            document.getElementById('stat-correct').textContent = `${scoreTotalCorrect}/${total}`;
+            document.getElementById('stat-accuracy').textContent = `${accuracyPct}%`;
+
+            // Victory audio
+            speakText(`Congratulations! You completed the quiz with ${accuracyPct} percent accuracy!`);
+        }
+
+        function restartQuiz() {
+            startQuiz();
+        }
+
+        // Keyboard Shortcut: Allow 'Enter' key press on Desktop to trigger check answer
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                const quizContainer = document.getElementById('quiz-container');
+                if (!quizContainer.classList.contains('hidden')) {
+                    const checkBtn = document.getElementById('check-btn');
+                    const nextBtn = document.getElementById('next-btn');
+
+                    if (!checkBtn.classList.contains('hidden')) {
+                        checkAnswer();
+                    } else if (!nextBtn.classList.contains('hidden')) {
+                        nextQuestion();
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>
