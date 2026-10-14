@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>English Dictation Practice</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        @keyframes pulse-ring {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.7); }
+            70% { transform: scale(1.05); box-shadow: 0 0 0 15px rgba(99, 102, 241, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(99, 102, 241, 0); }
+        }
+        .speaking-animation {
+            animation: pulse-ring 1.5s infinite;
+        }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-8px); }
+            40%, 80% { transform: translateX(8px); }
+        }
+        .shake-animation {
+            animation: shake 0.4s ease-in-out;
+        }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col justify-between selection:bg-indigo-500 selection:text-white">
+
+    <!-- Header Navigation -->
+    <header class="w-full bg-slate-800/80 backdrop-blur border-b border-slate-700/60 sticky top-0 z-50">
+        <div class="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center text-white font-bold text-lg shadow-lg shadow-indigo-500/30">
+                    <i class="fa-solid fa-headphones"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-base md:text-lg text-white leading-tight">English Dictation</h1>
+                    <p class="text-xs text-slate-400">Interactive Listening Practice</p>
+                </div>
+            </div>
+            <!-- Audio Voice Status Indicator -->
+            <div id="voice-indicator" class="text-xs bg-slate-700/80 text-slate-300 px-3 py-1.5 rounded-full flex items-center space-x-2 border border-slate-600/50">
+                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                <span id="voice-name">Female Voice (Slow)</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <main class="flex-grow flex items-center justify-center p-4 md:p-6">
+        <div class="w-full max-w-2xl">
+
+            <!-- 1. START SCREEN -->
+            <div id="start-screen" class="bg-slate-800 rounded-3xl p-6 md:p-10 border border-slate-700 shadow-2xl text-center space-y-6">
+                <div class="w-20 h-20 bg-indigo-600/20 text-indigo-400 rounded-full flex items-center justify-center mx-auto border border-indigo-500/30">
+                    <i class="fa-solid fa-spell-check text-4xl"></i>
+                </div>
+                <div class="space-y-2">
+                    <h2 class="text-2xl md:text-3xl font-extrabold text-white">Welcome to Dictation Practice</h2>
+                    <p class="text-slate-300 text-sm md:text-base max-w-md mx-auto">
+                        Listen carefully to each audio prompt and type the sentence accurately. You have 10 sentences in total.
+                    </p>
+                </div>
+
+                <div class="bg-slate-700/40 rounded-2xl p-4 text-left space-y-2 border border-slate-700 text-xs md:text-sm text-slate-300">
+                    <div class="flex items-center space-x-2 text-indigo-300 font-semibold mb-1">
+                        <i class="fa-solid fa-circle-info"></i>
+                        <span>Activity Rules:</span>
+                    </div>
+                    <p><i class="fa-solid fa-check text-emerald-400 mr-2"></i>Questions are randomly shuffled every session.</p>
+                    <p><i class="fa-solid fa-check text-emerald-400 mr-2"></i>You can attempt each question up to 3 times.</p>
+                    <p><i class="fa-solid fa-check text-amber-400 mr-2"></i>A question counts as <span class="text-amber-300 font-medium">Incorrect</span> overall if you make even 1 mistake.</p>
+                    <p><i class="fa-solid fa-check text-indigo-400 mr-2"></i>Press <kbd class="bg-slate-800 border border-slate-600 px-1.5 py-0.5 rounded text-xs text-white">Enter ↵</kbd> on desktop to quickly submit.</p>
+                </div>
+
+                <button id="start-btn" onclick="startQuiz()" class="w-full py-4 bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white font-bold rounded-2xl shadow-lg shadow-indigo-600/30 transition-all duration-200 transform hover:-translate-y-0.5 text-base md:text-lg flex items-center justify-center space-x-2">
+                    <span>Start Practice</span>
+                    <i class="fa-solid fa-arrow-right"></i>
+                </button>
+            </div>
+
+            <!-- 2. QUESTION SCREEN -->
+            <div id="question-screen" class="hidden bg-slate-800 rounded-3xl p-6 md:p-8 border border-slate-700 shadow-2xl space-y-6">
+                
+                <!-- Progress Header -->
+                <div class="space-y-2">
+                    <div class="flex items-center justify-between text-xs md:text-sm text-slate-400 font-medium">
+                        <span id="question-number">Question 1 of 10</span>
+                        <span id="attempts-badge" class="bg-slate-700 text-slate-300 px-2.5 py-1 rounded-full border border-slate-600">
+                            Attempt: 1 / 3
+                        </span>
+                    </div>
+                    <!-- Progress Bar -->
+                    <div class="w-full bg-slate-700/60 rounded-full h-2.5 overflow-hidden">
+                        <div id="progress-bar" class="bg-gradient-to-r from-indigo-500 to-violet-500 h-2.5 rounded-full transition-all duration-300" style="width: 10%"></div>
+                    </div>
+                </div>
+
+                <!-- Instruction Banner -->
+                <div class="text-center pt-2">
+                    <span class="inline-block px-3 py-1 bg-indigo-900/50 text-indigo-300 text-xs md:text-sm font-semibold rounded-full border border-indigo-700/50">
+                        Dictation – Listen and write down the sentence
+                    </span>
+                </div>
+
+                <!-- Central Speaker Button -->
+                <div class="flex flex-col items-center justify-center space-y-3 py-2">
+                    <button id="listen-btn" onclick="playCurrentSentence()" class="w-24 h-24 md:w-28 md:h-28 bg-gradient-to-tr from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-400 active:scale-95 text-white rounded-full flex flex-col items-center justify-center shadow-xl shadow-indigo-600/40 transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-indigo-500/50 group">
+                        <i id="speaker-icon" class="fa-solid fa-volume-high text-3xl md:text-4xl group-hover:scale-110 transition-transform"></i>
+                        <span class="text-[11px] font-medium mt-1 text-indigo-100">Click to Listen</span>
+                    </button>
+                    <p class="text-xs text-slate-400 flex items-center space-x-1">
+                        <i class="fa-solid fa-rotate-right text-[10px]"></i>
+                        <span>Click speaker icon to repeat audio</span>
+                    </p>
+                </div>
+
+                <!-- Answer Input & Submission Form -->
+                <div id="input-container" class="space-y-4">
+                    <div class="relative">
+                        <input type="text" id="answer-input" autocomplete="off" spellcheck="false" placeholder="Type what you hear here..." 
+                               class="w-full px-5 py-4 bg-slate-900/90 border-2 border-slate-700 rounded-2xl text-white placeholder-slate-500 text-base md:text-lg focus:outline-none focus:border-indigo-500 transition-colors shadow-inner" />
+                        <button id="clear-btn" onclick="clearInput()" class="hidden absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200 text-sm p-1">
+                            <i class="fa-solid fa-circle-xmark"></i>
+                        </button>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="flex items-center space-x-3">
+                        <button id="submit-btn" onclick="checkAnswer()" class="flex-1 py-3.5 bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white font-bold rounded-xl shadow-lg shadow-indigo-600/25 transition-all duration-150 flex items-center justify-center space-x-2 text-sm md:text-base">
+                            <span>Check Answer</span>
+                            <i class="fa-solid fa-check"></i>
+                        </button>
+                        <button id="next-btn" onclick="nextQuestion()" class="hidden flex-1 py-3.5 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white font-bold rounded-xl shadow-lg shadow-emerald-600/25 transition-all duration-150 items-center justify-center space-x-2 text-sm md:text-base">
+                            <span>Next Question</span>
+                            <i class="fa-solid fa-arrow-right"></i>
+                        </button>
+                    </div>
+                    <p class="text-center text-xs text-slate-500">Tip: Press <kbd class="bg-slate-800 border border-slate-700 px-1 py-0.5 rounded text-slate-300">Enter ↵</kbd> to submit or advance</p>
+                </div>
+
+                <!-- Feedback Message Container -->
+                <div id="feedback-box" class="hidden rounded-2xl p-4 text-center transition-all duration-200">
+                    <p id="feedback-title" class="font-bold text-base md:text-lg flex items-center justify-center space-x-2"></p>
+                    <p id="feedback-detail" class="text-xs md:text-sm mt-1"></p>
+                </div>
+
+            </div>
+
+            <!-- 3. RESULTS / SUMMARY SCREEN -->
+            <div id="result-screen" class="hidden bg-slate-800 rounded-3xl p-6 md:p-8 border border-slate-700 shadow-2xl space-y-6">
+                
+                <div class="text-center space-y-3">
+                    <div class="w-16 h-16 bg-gradient-to-tr from-indigo-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto shadow-lg shadow-indigo-500/30 text-white text-3xl">
+                        <i class="fa-solid fa-trophy"></i>
+                    </div>
+                    <h2 class="text-2xl md:text-3xl font-extrabold text-white">Practice Complete!</h2>
+                    <p class="text-slate-400 text-sm">Here is a detailed summary of your dictation performance.</p>
+                </div>
+
+                <!-- Summary Cards -->
+                <div class="grid grid-cols-3 gap-3 text-center">
+                    <div class="bg-slate-900/80 p-3.5 rounded-2xl border border-slate-700">
+                        <p class="text-xs text-slate-400 font-medium">Score</p>
+                        <p id="final-score" class="text-xl md:text-2xl font-extrabold text-white mt-0.5">0 / 10</p>
+                    </div>
+                    <div class="bg-emerald-950/40 p-3.5 rounded-2xl border border-emerald-800/40">
+                        <p class="text-xs text-emerald-400 font-medium">Correct</p>
+                        <p id="final-correct" class="text-xl md:text-2xl font-extrabold text-emerald-400 mt-0.5">0</p>
+                    </div>
+                    <div class="bg-rose-950/40 p-3.5 rounded-2xl border border-rose-800/40">
+                        <p class="text-xs text-rose-400 font-medium">Incorrect</p>
+                        <p id="final-incorrect" class="text-xl md:text-2xl font-extrabold text-rose-400 mt-0.5">0</p>
+                    </div>
+                </div>
+
+                <!-- Detailed Answers List -->
+                <div class="space-y-3">
+                    <h3 class="text-sm font-semibold text-slate-300 uppercase tracking-wider flex items-center justify-between">
+                        <span>Question Breakdown</span>
+                        <span class="text-xs text-slate-500 font-normal">Strict 1st-try rule</span>
+                    </h3>
+                    <div id="breakdown-list" class="space-y-2 max-h-64 overflow-y-auto pr-1">
+                        <!-- Dynamic breakdown rows inserted here -->
+                    </div>
+                </div>
+
+                <!-- Restart Button -->
+                <button onclick="restartQuiz()" class="w-full py-4 bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white font-bold rounded-2xl shadow-lg shadow-indigo-600/30 transition-all duration-200 flex items-center justify-center space-x-2 text-base md:text-lg">
+                    <i class="fa-solid fa-rotate-right"></i>
+                    <span>Try Again (New Shuffle)</span>
+                </button>
+
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="w-full py-4 text-center text-xs text-slate-500 border-t border-slate-800">
+        <p>Dictation Web App &bull; Ready for GitHub Pages</p>
+    </footer>
+
+    <!-- Application Logic Script -->
+    <script>
+        // -------------------------------------------------------------
+        // 1. DATA & STATE MANAGEMENT
+        // -------------------------------------------------------------
+        const ORIGINAL_QUESTIONS = [
+            "I like playing the guitar.",
+            "You don't like shopping.",
+            "Do we like cooking?",
+            "They like painting.",
+            "He likes playing the piano.",
+            "She doesn't like visiting family.",
+            "He likes cooking.",
+            "Does he like playing the guitar?",
+            "She likes painting with friends.",
+            "We like shopping."
+        ];
+
+        const PRAISE_LIST = ["Well done!", "Good job!", "Excellent!", "Very good!"];
+
+        let shuffledQuestions = [];
+        let currentIndex = 0;
+        let attemptsCount = 0;      // Current question error attempts
+        let currentHadError = false; // Flag if user made at least 1 mistake on current question
+        let resultsList = [];       // Array storing results for each question
+        let femaleVoice = null;
+        let isAudioPlaying = false;
+
+        // Web Audio Context for synthesized sound feedback (no external MP3 dependencies)
+        let audioCtx = null;
+
+        function getAudioContext() {
+            if (!audioCtx) {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                if (AudioContext) {
+                    audioCtx = new AudioContext();
+                }
+            }
+            if (audioCtx && audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+            return audioCtx;
+        }
+
+        // -------------------------------------------------------------
+        // 2. SPEECH SYNTHESIS & VOICE SELECTION
+        // -------------------------------------------------------------
+        function initVoices() {
+            if (!('speechSynthesis' in window)) {
+                document.getElementById('voice-name').innerText = "TTS Not Supported";
+                return;
+            }
+
+            const updateVoiceList = () => {
+                const voices = window.speechSynthesis.getVoices();
+                if (!voices || voices.length === 0) return;
+
+                const englishVoices = voices.filter(v => v.lang.startsWith('en'));
+                
+                // Keyword priority list for standard female English voices across browsers
+                const femaleKeywords = [
+                    'female', 'zira', 'samantha', 'victoria', 'karen', 'fiona', 
+                    'moira', 'veena', 'google us english', 'natural', 'jenny', 'aria'
+                ];
+
+                femaleVoice = null;
+                for (let kw of femaleKeywords) {
+                    let match = englishVoices.find(v => v.name.toLowerCase().includes(kw));
+                    if (match) {
+                        femaleVoice = match;
+                        break;
+                    }
+                }
+
+                // Fallback to any English voice
+                if (!femaleVoice && englishVoices.length > 0) {
+                    femaleVoice = englishVoices[0];
+                }
+
+                const displayVoiceName = femaleVoice ? femaleVoice.name.split(' ')[0] + ' (Female)' : 'English Voice';
+                document.getElementById('voice-name').innerText = displayVoiceName + " • Slow";
+            };
+
+            updateVoiceList();
+            if (speechSynthesis.onvoiceschanged !== undefined) {
+                speechSynthesis.onvoiceschanged = updateVoiceList;
+            }
+        }
+
+        function speakText(text, rate = 0.8, onEndCallback = null) {
+            if (!('speechSynthesis' in window)) {
+                if (onEndCallback) onEndCallback();
+                return;
+            }
+
+            // Cancel any ongoing speech
+            window.speechSynthesis.cancel();
+
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.rate = rate; // Slow & clear reading
+            utterance.pitch = 1.0;
+            utterance.lang = 'en-US';
+
+            if (femaleVoice) {
+                utterance.voice = femaleVoice;
+            }
+
+            // Visual feedback on speaker button
+            const listenBtn = document.getElementById('listen-btn');
+            const speakerIcon = document.getElementById('speaker-icon');
+
+            utterance.onstart = () => {
+                isAudioPlaying = true;
+                if (listenBtn) listenBtn.classList.add('speaking-animation');
+                if (speakerIcon) speakerIcon.className = "fa-solid fa-volume-high text-3xl md:text-4xl text-indigo-200 animate-bounce";
+            };
+
+            const resetVisuals = () => {
+                isAudioPlaying = false;
+                if (listenBtn) listenBtn.classList.remove('speaking-animation');
+                if (speakerIcon) speakerIcon.className = "fa-solid fa-volume-high text-3xl md:text-4xl group-hover:scale-110 transition-transform";
+                if (onEndCallback) onEndCallback();
+            };
+
+            utterance.onend = resetVisuals;
+            utterance.onerror = resetVisuals;
+
+            window.speechSynthesis.speak(utterance);
+        }
+
+        // -------------------------------------------------------------
+        // 3. SYNTHESIZED SOUND EFFECTS (Web Audio API)
+        // -------------------------------------------------------------
+        function playSoundEffect(type) {
+            try {
+                const ctx = getAudioContext();
+                if (!ctx) return;
+
+                if (type === 'correct') {
+                    // Pleasant ascending chime (C5 -> E5 -> G5 -> C6)
+                    const freqs = [523.25, 659.25, 783.99, 1046.50];
+                    freqs.forEach((freq, idx) => {
+                        const osc = ctx.createOscillator();
+                        const gain = ctx.createGain();
+                        osc.type = 'sine';
+                        osc.frequency.setValueAtTime(freq, ctx.currentTime + idx * 0.08);
+                        
+                        gain.gain.setValueAtTime(0.15, ctx.currentTime + idx * 0.08);
+                        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + idx * 0.08 + 0.25);
+
+                        osc.connect(gain);
+                        gain.connect(ctx.destination);
+
+                        osc.start(ctx.currentTime + idx * 0.08);
+                        osc.stop(ctx.currentTime + idx * 0.08 + 0.25);
+                    });
+                } else if (type === 'wrong') {
+                    // Low error buzz (G3 -> E3)
+                    const freqs = [196.00, 164.81];
+                    freqs.forEach((freq, idx) => {
+                        const osc = ctx.createOscillator();
+                        const gain = ctx.createGain();
+                        osc.type = 'sawtooth';
+                        osc.frequency.setValueAtTime(freq, ctx.currentTime + idx * 0.12);
+
+                        gain.gain.setValueAtTime(0.12, ctx.currentTime + idx * 0.12);
+                        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + idx * 0.12 + 0.2);
+
+                        osc.connect(gain);
+                        gain.connect(ctx.destination);
+
+                        osc.start(ctx.currentTime + idx * 0.12);
+                        osc.stop(ctx.currentTime + idx * 0.12 + 0.2);
+                    });
+                }
+            } catch (e) {
+                console.log('Audio playback error:', e);
+            }
+        }
+
+        // -------------------------------------------------------------
+        // 4. UTILITY FUNCTIONS
+        // -------------------------------------------------------------
+        // Fisher-Yates array shuffling
+        function shuffleArray(array) {
+            const arr = [...array];
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+            return arr;
+        }
+
+        // Normalize text string for robust fair comparison
+        function normalizeText(text) {
+            return text
+                .toLowerCase()
+                .replace(/[’']/g, "'")            // Normalize curly apostrophes to single straight quote
+                .replace(/[^\w\s']/g, '')         // Remove punctuation (. ? ! ,)
+                .replace(/\s+/g, ' ')             // Collapse multiple spaces
+                .trim();
+        }
+
+        function clearInput() {
+            const input = document.getElementById('answer-input');
+            input.value = '';
+            document.getElementById('clear-btn').classList.add('hidden');
+            input.focus();
+        }
+
+        // -------------------------------------------------------------
+        // 5. GAME FLOW CONTROLLER
+        // -------------------------------------------------------------
+        function startQuiz() {
+            // Unlock Web Audio Context
+            getAudioContext();
+
+            // Shuffle questions fresh every session
+            shuffledQuestions = shuffleArray(ORIGINAL_QUESTIONS);
+            currentIndex = 0;
+            resultsList = [];
+
+            // UI view state transition
+            document.getElementById('start-screen').classList.add('hidden');
+            document.getElementById('result-screen').classList.add('hidden');
+            document.getElementById('question-screen').classList.remove('hidden');
+
+            loadQuestion(currentIndex);
+        }
+
+        function loadQuestion(index) {
+            attemptsCount = 0;
+            currentHadError = false;
+
+            // Reset UI elements
+            const input = document.getElementById('answer-input');
+            input.value = '';
+            input.disabled = false;
+            input.classList.remove('border-rose-500', 'border-emerald-500');
+            input.classList.add('border-slate-700');
+
+            document.getElementById('clear-btn').classList.add('hidden');
+            document.getElementById('submit-btn').classList.remove('hidden');
+            document.getElementById('next-btn').classList.add('hidden');
+            document.getElementById('next-btn').classList.remove('flex');
+
+            const feedbackBox = document.getElementById('feedback-box');
+            feedbackBox.className = 'hidden rounded-2xl p-4 text-center transition-all duration-200';
+
+            // Progress text and bar
+            document.getElementById('question-number').innerText = `Question ${index + 1} of ${shuffledQuestions.length}`;
+            document.getElementById('attempts-badge').innerText = `Attempt: 1 / 3`;
+            document.getElementById('attempts-badge').className = `bg-slate-700 text-slate-300 px-2.5 py-1 rounded-full border border-slate-600`;
+
+            const percent = ((index + 1) / shuffledQuestions.length) * 100;
+            document.getElementById('progress-bar').style.width = `${percent}%`;
+
+            // Auto focus input
+            setTimeout(() => {
+                input.focus();
+            }, 100);
+
+            // Automatically speak audio on new question
+            setTimeout(() => {
+                playCurrentSentence();
+            }, 300);
+        }
+
+        function playCurrentSentence() {
+            if (currentIndex < shuffledQuestions.length) {
+                speakText(shuffledQuestions[currentIndex], 0.8);
+            }
+        }
+
+        function checkAnswer() {
+            const input = document.getElementById('answer-input');
+            const userRaw = input.value;
+            const targetSentence = shuffledQuestions[currentIndex];
+
+            if (!userRaw.trim()) {
+                input.focus();
+                return;
+            }
+
+            const normalizedUser = normalizeText(userRaw);
+            const normalizedTarget = normalizeText(targetSentence);
+
+            const feedbackBox = document.getElementById('feedback-box');
+            const feedbackTitle = document.getElementById('feedback-title');
+            const feedbackDetail = document.getElementById('feedback-detail');
+
+            if (normalizedUser === normalizedTarget) {
+                // CORRECT ANSWER
+                playSoundEffect('correct');
+
+                // Pick random praise string
+                const randomPraise = PRAISE_LIST[Math.floor(Math.random() * PRAISE_LIST.length)];
+                speakText(randomPraise, 0.95);
+
+                input.disabled = true;
+                input.classList.remove('border-slate-700', 'border-rose-500');
+                input.classList.add('border-emerald-500');
+
+                feedbackBox.classList.remove('hidden', 'bg-rose-950/60', 'border-rose-800/60', 'text-rose-200');
+                feedbackBox.classList.add('bg-emerald-950/60', 'border', 'border-emerald-800/60', 'text-emerald-200');
+
+                feedbackTitle.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-400 text-xl"></i> <span>${randomPraise}</span>`;
+                feedbackDetail.innerText = `Correct sentence: "${targetSentence}"`;
+
+                // Record question results
+                resultsList.push({
+                    sentence: targetSentence,
+                    userAnswer: userRaw,
+                    hadError: currentHadError,
+                    attemptsUsed: attemptsCount + 1,
+                    isOverallCorrect: !currentHadError // Strictly correct only if 0 mistakes made
+                });
+
+                // Toggle submit to next button
+                document.getElementById('submit-btn').classList.add('hidden');
+                const nextBtn = document.getElementById('next-btn');
+                nextBtn.classList.remove('hidden');
+                nextBtn.classList.add('flex');
+                nextBtn.focus();
+
+            } else {
+                // INCORRECT ANSWER
+                attemptsCount++;
+                currentHadError = true;
+
+                playSoundEffect('wrong');
+
+                // Shake animation for feedback
+                input.classList.add('shake-animation', 'border-rose-500');
+                setTimeout(() => {
+                    input.classList.remove('shake-animation');
+                }, 400);
+
+                if (attemptsCount < 3) {
+                    // Allowed retries remain
+                    document.getElementById('attempts-badge').innerText = `Attempt: ${attemptsCount + 1} / 3`;
+                    document.getElementById('attempts-badge').className = `bg-rose-900/60 text-rose-200 px-2.5 py-1 rounded-full border border-rose-700/60 font-semibold`;
+
+                    feedbackBox.classList.remove('hidden', 'bg-emerald-950/60', 'border-emerald-800/60', 'text-emerald-200');
+                    feedbackBox.classList.add('bg-rose-950/60', 'border', 'border-rose-800/60', 'text-rose-200');
+
+                    feedbackTitle.innerHTML = `<i class="fa-solid fa-circle-xmark text-rose-400 text-xl"></i> <span>Not quite right. Try again!</span>`;
+                    feedbackDetail.innerText = `Remaining attempts for this question: ${3 - attemptsCount}`;
+
+                    // Reset input for retry
+                    input.value = '';
+                    document.getElementById('clear-btn').classList.add('hidden');
+                    input.focus();
+
+                } else {
+                    // Exceeded max attempts (3 errors)
+                    document.getElementById('attempts-badge').innerText = `Failed (3/3)`;
+                    document.getElementById('attempts-badge').className = `bg-rose-950 text-rose-400 px-2.5 py-1 rounded-full border border-rose-800 font-bold`;
+
+                    input.disabled = true;
+
+                    feedbackBox.classList.remove('hidden', 'bg-emerald-950/60', 'border-emerald-800/60', 'text-emerald-200');
+                    feedbackBox.classList.add('bg-rose-950/60', 'border', 'border-rose-800/60', 'text-rose-200');
+
+                    feedbackTitle.innerHTML = `<i class="fa-solid fa-triangle-exclamation text-rose-400 text-xl"></i> <span>Out of attempts!</span>`;
+                    feedbackDetail.innerHTML = `Correct answer: <strong class="text-white underline">${targetSentence}</strong>`;
+
+                    // Speak the answer clearly for learning
+                    speakText("The correct sentence is: " + targetSentence, 0.75);
+
+                    // Record as failed
+                    resultsList.push({
+                        sentence: targetSentence,
+                        userAnswer: userRaw,
+                        hadError: true,
+                        attemptsUsed: 3,
+                        isOverallCorrect: false
+                    });
+
+                    // Toggle submit to next button
+                    document.getElementById('submit-btn').classList.add('hidden');
+                    const nextBtn = document.getElementById('next-btn');
+                    nextBtn.classList.remove('hidden');
+                    nextBtn.classList.add('flex');
+                    nextBtn.focus();
+                }
+            }
+        }
+
+        function nextQuestion() {
+            currentIndex++;
+            if (currentIndex < shuffledQuestions.length) {
+                loadQuestion(currentIndex);
+            } else {
+                showResults();
+            }
+        }
+
+        function showResults() {
+            document.getElementById('question-screen').classList.add('hidden');
+            document.getElementById('result-screen').classList.remove('hidden');
+
+            const total = resultsList.length;
+            const correctCount = resultsList.filter(r => r.isOverallCorrect).length;
+            const incorrectCount = total - correctCount;
+
+            document.getElementById('final-score').innerText = `${correctCount} / ${total}`;
+            document.getElementById('final-correct').innerText = correctCount;
+            document.getElementById('final-incorrect').innerText = incorrectCount;
+
+            // Generate breakdown list view
+            const listContainer = document.getElementById('breakdown-list');
+            listContainer.innerHTML = '';
+
+            resultsList.forEach((item, idx) => {
+                const row = document.createElement('div');
+                row.className = `p-3 rounded-xl border ${item.isOverallCorrect ? 'bg-emerald-950/30 border-emerald-800/40' : 'bg-rose-950/30 border-rose-800/40'} flex items-start justify-between space-x-3`;
+
+                const badge = item.isOverallCorrect 
+                    ? `<span class="px-2 py-0.5 bg-emerald-900/60 text-emerald-300 border border-emerald-700/50 rounded-md text-[11px] font-semibold whitespace-nowrap">Correct (1st Try)</span>`
+                    : `<span class="px-2 py-0.5 bg-rose-900/60 text-rose-300 border border-rose-700/50 rounded-md text-[11px] font-semibold whitespace-nowrap">Incorrect (${item.attemptsUsed} tries)</span>`;
+
+                const icon = item.isOverallCorrect
+                    ? `<i class="fa-solid fa-circle-check text-emerald-400 text-lg mt-0.5"></i>`
+                    : `<i class="fa-solid fa-circle-xmark text-rose-400 text-lg mt-0.5"></i>`;
+
+                row.innerHTML = `
+                    <div class="flex items-start space-x-3">
+                        ${icon}
+                        <div class="space-y-0.5">
+                            <p class="text-xs font-bold text-slate-200">Sentence ${idx + 1}: <span class="font-normal text-white">"${item.sentence}"</span></p>
+                            ${!item.isOverallCorrect ? `<p class="text-[11px] text-slate-400">Your answer: <span class="text-rose-300 font-mono">"${item.userAnswer || 'Blank'}"</span></p>` : ''}
+                        </div>
+                    </div>
+                    <div>${badge}</div>
+                `;
+                listContainer.appendChild(row);
+            });
+        }
+
+        function restartQuiz() {
+            startQuiz();
+        }
+
+        // -------------------------------------------------------------
+        // 6. EVENT LISTENERS & KEYBOARD SHORTCUTS
+        // -------------------------------------------------------------
+        document.addEventListener('DOMContentLoaded', () => {
+            initVoices();
+
+            const input = document.getElementById('answer-input');
+            const clearBtn = document.getElementById('clear-btn');
+
+            // Input typing listener to toggle clear button
+            input.addEventListener('input', () => {
+                if (input.value.length > 0) {
+                    clearBtn.classList.remove('hidden');
+                } else {
+                    clearBtn.classList.add('hidden');
+                }
+            });
+
+            // Enter key shortcut for seamless desktop interaction
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    const submitBtn = document.getElementById('submit-btn');
+                    if (!submitBtn.classList.contains('hidden')) {
+                        checkAnswer();
+                    }
+                }
+            });
+
+            // Global Enter key handler when Next Question button is active
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    const nextBtn = document.getElementById('next-btn');
+                    if (!nextBtn.classList.contains('hidden') && document.activeElement !== document.getElementById('answer-input')) {
+                        e.preventDefault();
+                        nextQuestion();
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+</html>
