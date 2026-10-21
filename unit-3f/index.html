@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>English Grammar Practice: Like / Likes & Don't / Doesn't</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        heading: ['Fredoka', 'sans-serif'],
+                        body: ['Nunito', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            blue: '#4F46E5',
+                            lightBlue: '#EEF2FF',
+                            purple: '#7C3AED',
+                            green: '#10B981',
+                            coral: '#F43F5E',
+                            yellow: '#F59E0B',
+                        }
+                    },
+                    keyframes: {
+                        bounceShort: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-10px)' }
+                        },
+                        shake: {
+                            '0%, 100%': { transform: 'translateX(0)' },
+                            '20%, 60%': { transform: 'translateX(-10px)' },
+                            '40%, 80%': { transform: 'translateX(10px)' }
+                        },
+                        popIn: {
+                            '0%': { opacity: '0', transform: 'scale(0.8)' },
+                            '100%': { opacity: '1', transform: 'scale(1)' }
+                        }
+                    },
+                    animation: {
+                        bounceShort: 'bounceShort 0.5s ease-in-out',
+                        shake: 'shake 0.4s ease-in-out',
+                        popIn: 'popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Nunito', sans-serif;
+            background-color: #F8FAFC;
+        }
+        h1, h2, h3, .font-heading {
+            font-family: 'Fredoka', sans-serif;
+        }
+        .option-card {
+            transition: all 0.2s ease-in-out;
+        }
+        .option-card:hover {
+            transform: translateY(-2px);
+        }
+        .option-card.selected {
+            border-color: #4F46E5;
+            background-color: #EEF2FF;
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.15);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between text-gray-800 antialiased bg-slate-50">
+
+    <!-- Header -->
+    <header class="bg-indigo-600 text-white shadow-md sticky top-0 z-40">
+        <div class="max-w-4xl mx-auto px-4 py-3 flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <div class="bg-white/20 p-2 rounded-xl text-yellow-300">
+                    <i class="fa-solid fa-graduation-cap text-2xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl md:text-2xl font-bold tracking-wide">Grammar Master</h1>
+                    <p class="text-xs text-indigo-200">Interactive English Grammar Practice</p>
+                </div>
+            </div>
+            <button onclick="restartFullCourse()" class="text-xs bg-indigo-500 hover:bg-indigo-700 text-white font-semibold py-2 px-3 rounded-lg transition duration-200 flex items-center space-x-1 border border-indigo-400">
+                <i class="fa-solid fa-rotate-right"></i>
+                <span>Restart All</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-3xl mx-auto w-full px-4 py-6 flex-grow flex flex-col justify-center">
+
+        <!-- QUIZ SCREEN -->
+        <div id="screen-quiz" class="bg-white rounded-3xl shadow-xl p-5 md:p-8 border border-slate-100 relative">
+            
+            <!-- Quiz Progress Top Bar -->
+            <div class="flex justify-between items-center mb-4 pb-3 border-b border-gray-100">
+                <div id="part-badge" class="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-indigo-100 text-indigo-700">
+                    Part 1: Like / Likes
+                </div>
+                <div class="text-sm font-extrabold text-indigo-600 font-heading">
+                    Question <span id="q-current-num">1</span>/10
+                </div>
+            </div>
+
+            <!-- Progress Bar -->
+            <div class="w-full bg-gray-100 rounded-full h-2.5 mb-6 overflow-hidden">
+                <div id="quiz-progress-bar" class="bg-indigo-600 h-2.5 rounded-full transition-all duration-300" style="width: 10%"></div>
+            </div>
+
+            <!-- JOB AID CONTAINER (Displayed for Q1-Q5) -->
+            <div id="job-aid-box" class="mb-6 bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-indigo-200 rounded-2xl p-4 transition-all duration-300">
+                <div class="flex items-center space-x-2 text-indigo-800 font-bold text-sm mb-2 font-heading">
+                    <i class="fa-solid fa-lightbulb text-yellow-500 text-base"></i>
+                    <span id="job-aid-title">Grammar Helper (Job Aid)</span>
+                </div>
+                <div id="job-aid-content" class="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs md:text-sm text-gray-700">
+                    <!-- Dynamic Job Aid Content -->
+                </div>
+            </div>
+
+            <!-- Memory Challenge Indicator (Q6-Q10) -->
+            <div id="memory-challenge-tag" class="hidden mb-6 bg-amber-50 border border-amber-200 text-amber-800 text-xs py-2 px-3 rounded-xl flex items-center justify-center gap-2 font-semibold">
+                <i class="fa-solid fa-brain text-amber-500"></i> Memory Challenge: No helper guide for questions 6 - 10!
+            </div>
+
+            <!-- Question Card -->
+            <div class="bg-slate-50 rounded-2xl p-6 mb-6 text-center border border-slate-200">
+                <p class="text-xs text-gray-400 font-semibold uppercase tracking-wider mb-2">Fill in the blank</p>
+                <h3 id="question-text" class="text-2xl md:text-3xl font-bold text-gray-800 font-heading tracking-wide">
+                    I <span class="border-b-4 border-indigo-500 px-3 py-0.5 text-indigo-600 bg-indigo-50 rounded">___</span> apples.
+                </h3>
+            </div>
+
+            <!-- Options Area -->
+            <div id="options-container" class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                <!-- Option Buttons Injected via JS -->
+            </div>
+
+            <!-- Action & Feedback Bar -->
+            <div class="space-y-3">
+                <div id="attempts-left-info" class="text-xs text-center text-gray-500 font-semibold h-4">
+                    Attempts left: <span id="attempts-count" class="text-indigo-600 font-bold">3</span>
+                </div>
+
+                <button id="btn-check" onclick="checkAnswer()" class="w-full bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white font-bold py-3.5 px-6 rounded-xl shadow-lg shadow-indigo-200 transition duration-200 flex items-center justify-center text-base space-x-2 font-heading">
+                    <span>Check Answer</span>
+                    <i class="fa-solid fa-paper-plane text-sm"></i>
+                </button>
+
+                <button id="btn-next" onclick="nextQuestion()" class="hidden w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 px-6 rounded-xl shadow-lg shadow-emerald-200 transition duration-200 flex items-center justify-center text-base space-x-2 font-heading">
+                    <span id="btn-next-text">Next Question</span>
+                    <i class="fa-solid fa-arrow-right text-sm"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- TRANSITION INTERMEDIATE SCREEN (Between Part 1 and Part 2) -->
+        <div id="screen-transition" class="hidden bg-white rounded-3xl shadow-xl p-6 md:p-8 text-center border border-slate-100 animation-popIn">
+            <div class="w-20 h-20 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl">
+                <i class="fa-solid fa-circle-check"></i>
+            </div>
+            <h2 class="text-2xl md:text-3xl font-bold text-gray-800 mb-2 font-heading">Part 1 Completed!</h2>
+            <p class="text-gray-600 mb-6 text-sm md:text-base">
+                Great job completing <span class="font-bold text-indigo-600">Part 1 (Like vs Likes)</span>! You are now moving automatically to <span class="font-bold text-purple-600">Part 2 (Don't vs Doesn't)</span>.
+            </p>
+            <button onclick="startPart2()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3.5 px-6 rounded-xl shadow-lg shadow-indigo-200 transition duration-200 font-heading flex items-center justify-center gap-2">
+                <span>Start Part 2 Now</span>
+                <i class="fa-solid fa-arrow-right"></i>
+            </button>
+        </div>
+
+        <!-- FINAL OVERALL RESULTS SCREEN -->
+        <div id="screen-result" class="hidden bg-white rounded-3xl shadow-xl p-6 md:p-8 text-center border border-slate-100 animation-popIn">
+            <div class="w-20 h-20 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl">
+                <i class="fa-solid fa-trophy"></i>
+            </div>
+
+            <h2 class="text-2xl md:text-3xl font-bold text-gray-800 mb-1 font-heading">All Exercises Completed!</h2>
+            <p class="text-gray-500 text-sm mb-6">Here is your total score and breakdown across both parts:</p>
+
+            <!-- Score Summary Cards -->
+            <div class="grid grid-cols-3 gap-3 mb-6">
+                <div class="bg-indigo-50 border border-indigo-100 rounded-2xl p-3 text-center">
+                    <span class="block text-xs text-indigo-600 font-bold uppercase">Total Questions</span>
+                    <span id="stat-total" class="text-2xl font-bold text-indigo-900 font-heading">20</span>
+                </div>
+                <div class="bg-emerald-50 border border-emerald-100 rounded-2xl p-3 text-center">
+                    <span class="block text-xs text-emerald-600 font-bold uppercase">Correct (1st Try)</span>
+                    <span id="stat-correct" class="text-2xl font-bold text-emerald-800 font-heading">0</span>
+                </div>
+                <div class="bg-rose-50 border border-rose-100 rounded-2xl p-3 text-center">
+                    <span class="block text-xs text-rose-600 font-bold uppercase">Incorrect</span>
+                    <span id="stat-incorrect" class="text-2xl font-bold text-rose-800 font-heading">0</span>
+                </div>
+            </div>
+
+            <!-- Detailed Breakdown List -->
+            <div class="text-left mb-6">
+                <h4 class="font-bold text-gray-700 text-sm mb-3 font-heading flex items-center gap-2">
+                    <i class="fa-solid fa-list-check text-indigo-500"></i> Comprehensive Results Breakdown:
+                </h4>
+                <div id="detailed-results-list" class="space-y-2 max-h-64 overflow-y-auto pr-1">
+                    <!-- Dynamic Question Results List -->
+                </div>
+            </div>
+
+            <button onclick="restartFullCourse()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3.5 px-6 rounded-xl shadow-lg shadow-indigo-200 transition duration-200 font-heading flex items-center justify-center gap-2">
+                <i class="fa-solid fa-rotate-right"></i> Try Practice Again
+            </button>
+        </div>
+
+    </main>
+
+    <!-- Modal Dialog / Feedback Overlay -->
+    <div id="praise-modal" class="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-3xl p-6 max-w-sm w-full text-center shadow-2xl transform transition-all animation-popIn">
+            <div id="modal-icon" class="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-3 text-3xl">
+                <!-- Icon injected -->
+            </div>
+            <h3 id="modal-title" class="text-2xl font-bold font-heading mb-2">Well Done!</h3>
+            <p id="modal-message" class="text-gray-600 text-sm mb-5">You selected the correct answer.</p>
+            <button id="modal-btn" onclick="closePraiseModal()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded-xl font-heading shadow-md transition duration-200">
+                Continue
+            </button>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-gray-200 py-4 text-center text-xs text-gray-500">
+        <div class="max-w-4xl mx-auto px-4">
+            <p>English Grammar Practice • GitHub Pages Ready • Grade School ESL / EFL Tool</p>
+        </div>
+    </footer>
+
+    <script>
+        /* ==========================================================================
+           DATA DEFINITIONS
+           ========================================================================== */
+        
+        // Question Bank for Part 1: Like vs Likes
+        const part1QuestionsData = [
+            { id: 1, sentence: "I ___ apples.", options: ["like", "likes"], answer: "like" },
+            { id: 2, sentence: "She ___ cats.", options: ["like", "likes"], answer: "likes" },
+            { id: 3, sentence: "They ___ football.", options: ["like", "likes"], answer: "like" },
+            { id: 4, sentence: "He ___ pizza.", options: ["like", "likes"], answer: "likes" },
+            { id: 5, sentence: "We ___ music.", options: ["like", "likes"], answer: "like" },
+            { id: 6, sentence: "My brother ___ dogs.", options: ["like", "likes"], answer: "likes" },
+            { id: 7, sentence: "You ___ ice cream.", options: ["like", "likes"], answer: "like" },
+            { id: 8, sentence: "Anna ___ dolls.", options: ["like", "likes"], answer: "likes" },
+            { id: 9, sentence: "Tom and Ben ___ games.", options: ["like", "likes"], answer: "like" },
+            { id: 10, sentence: "My mother ___ flowers.", options: ["like", "likes"], answer: "likes" }
+        ];
+
+        // Question Bank for Part 2: Don't vs Doesn't
+        const part2QuestionsData = [
+            { id: 1, sentence: "I ______ spiders.", options: ["don't like", "doesn't like"], answer: "don't like" },
+            { id: 2, sentence: "She ______ carrots.", options: ["don't like", "doesn't like"], answer: "doesn't like" },
+            { id: 3, sentence: "They ______ fish.", options: ["don't like", "doesn't like"], answer: "don't like" },
+            { id: 4, sentence: "He ______ onions.", options: ["don't like", "doesn't like"], answer: "doesn't like" },
+            { id: 5, sentence: "We ______ broccoli.", options: ["don't like", "doesn't like"], answer: "don't like" },
+            { id: 6, sentence: "My sister ______ cats.", options: ["don't like", "doesn't like"], answer: "doesn't like" },
+            { id: 7, sentence: "You ______ milk.", options: ["don't like", "doesn't like"], answer: "don't like" },
+            { id: 8, sentence: "Tom and Ben ______ spiders.", options: ["don't like", "doesn't like"], answer: "don't like" },
+            { id: 9, sentence: "My father ______ coffee.", options: ["don't like", "doesn't like"], answer: "doesn't like" },
+            { id: 10, sentence: "We ______ snakes.", options: ["don't like", "doesn't like"], answer: "don't like" }
+        ];
+
+        // Job Aid Definitions
+        const jobAids = {
+            part1: {
+                title: "Job Aid: Like vs Likes",
+                html: `
+                    <div class="bg-white p-2.5 rounded-xl border border-indigo-100 shadow-sm">
+                        <span class="font-bold text-indigo-600 block mb-0.5">Use "LIKE" with:</span>
+                        <span class="bg-indigo-50 text-indigo-800 px-2 py-0.5 rounded font-mono font-bold text-xs">I, You, We, They, Plural Nouns</span>
+                        <p class="text-[11px] text-gray-500 mt-1">Example: <i>They like football.</i></p>
+                    </div>
+                    <div class="bg-white p-2.5 rounded-xl border border-indigo-100 shadow-sm">
+                        <span class="font-bold text-purple-600 block mb-0.5">Use "LIKES" with:</span>
+                        <span class="bg-purple-50 text-purple-800 px-2 py-0.5 rounded font-mono font-bold text-xs">He, She, It, Singular Nouns</span>
+                        <p class="text-[11px] text-gray-500 mt-1">Example: <i>She likes cats.</i></p>
+                    </div>
+                `
+            },
+            part2: {
+                title: "Job Aid: Don't vs Doesn't",
+                html: `
+                    <div class="bg-white p-2.5 rounded-xl border border-purple-100 shadow-sm">
+                        <span class="font-bold text-indigo-600 block mb-0.5">Use "DON'T LIKE" with:</span>
+                        <span class="bg-indigo-50 text-indigo-800 px-2 py-0.5 rounded font-mono font-bold text-xs">I, You, We, They, Plural Nouns</span>
+                        <p class="text-[11px] text-gray-500 mt-1">Example: <i>We don't like broccoli.</i></p>
+                    </div>
+                    <div class="bg-white p-2.5 rounded-xl border border-purple-100 shadow-sm">
+                        <span class="font-bold text-purple-600 block mb-0.5">Use "DOESN'T LIKE" with:</span>
+                        <span class="bg-purple-50 text-purple-800 px-2 py-0.5 rounded font-mono font-bold text-xs">He, She, It, Singular Nouns</span>
+                        <p class="text-[11px] text-gray-500 mt-1">Example: <i>He doesn't like onions.</i></p>
+                    </div>
+                `
+            }
+        };
+
+        const praises = ["Well done!", "Good job!", "Excellent!", "Very good!"];
+
+        /* ==========================================================================
+           STATE MANAGEMENT
+           ========================================================================== */
+        let currentPart = 1;
+        let currentQuestionIndex = 0;
+        let activeQuestions = [];
+        let selectedOption = null;
+        let attemptsLeft = 3;
+        let overallHistory = []; // Cumulative history for both Part 1 & Part 2
+
+        /* ==========================================================================
+           AUDIO SYNTHESIS (Web Audio API)
+           ========================================================================== */
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        function playSound(type) {
+            try {
+                if (audioCtx.state === 'suspended') {
+                    audioCtx.resume();
+                }
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+
+                if (type === 'correct') {
+                    const now = audioCtx.currentTime;
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(523.25, now);
+                    osc.frequency.setValueAtTime(659.25, now + 0.1);
+                    osc.frequency.setValueAtTime(783.99, now + 0.2);
+                    gain.gain.setValueAtTime(0.3, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
+                    osc.start(now);
+                    osc.stop(now + 0.4);
+                } else if (type === 'wrong') {
+                    const now = audioCtx.currentTime;
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(180, now);
+                    osc.frequency.setValueAtTime(130, now + 0.15);
+                    gain.gain.setValueAtTime(0.3, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+                    osc.start(now);
+                    osc.stop(now + 0.3);
+                }
+            } catch (e) {
+                console.log("Audio play suppressed or unsupported.");
+            }
+        }
+
+        /* ==========================================================================
+           UTILITY FUNCTIONS
+           ========================================================================== */
+        function shuffleArray(array) {
+            const arr = [...array];
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+            return arr;
+        }
+
+        /* ==========================================================================
+           APP CORE LOGIC & NAVIGATION
+           ========================================================================== */
+        
+        // Auto-start practice on window load
+        window.onload = function() {
+            restartFullCourse();
+        };
+
+        function restartFullCourse() {
+            overallHistory = [];
+            startPart1();
+        }
+
+        function startPart1() {
+            currentPart = 1;
+            currentQuestionIndex = 0;
+            activeQuestions = shuffleArray(part1QuestionsData);
+
+            document.getElementById('screen-transition').classList.add('hidden');
+            document.getElementById('screen-result').classList.add('hidden');
+            document.getElementById('screen-quiz').classList.remove('hidden');
+
+            const badge = document.getElementById('part-badge');
+            badge.innerText = "Part 1: Like / Likes";
+            badge.className = "px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-indigo-100 text-indigo-700";
+
+            renderQuestion();
+        }
+
+        function startPart2() {
+            currentPart = 2;
+            currentQuestionIndex = 0;
+            activeQuestions = shuffleArray(part2QuestionsData);
+
+            document.getElementById('screen-transition').classList.add('hidden');
+            document.getElementById('screen-result').classList.add('hidden');
+            document.getElementById('screen-quiz').classList.remove('hidden');
+
+            const badge = document.getElementById('part-badge');
+            badge.innerText = "Part 2: Don't / Doesn't";
+            badge.className = "px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-purple-100 text-purple-700";
+
+            renderQuestion();
+        }
+
+        function renderQuestion() {
+            selectedOption = null;
+            attemptsLeft = 3;
+
+            const currentQ = activeQuestions[currentQuestionIndex];
+
+            // Update Progress UI
+            document.getElementById('q-current-num').innerText = currentQuestionIndex + 1;
+            const progressPercent = ((currentQuestionIndex + 1) / 10) * 100;
+            document.getElementById('quiz-progress-bar').style.width = `${progressPercent}%`;
+
+            // Toggle Job Aid display: Q1-5 show Job Aid; Q6-10 hide
+            const jobAidBox = document.getElementById('job-aid-box');
+            const memoryTag = document.getElementById('memory-challenge-tag');
+            
+            if (currentQuestionIndex < 5) {
+                jobAidBox.classList.remove('hidden');
+                memoryTag.classList.add('hidden');
+                const aid = currentPart === 1 ? jobAids.part1 : jobAids.part2;
+                document.getElementById('job-aid-title').innerText = aid.title;
+                document.getElementById('job-aid-content').innerHTML = aid.html;
+            } else {
+                jobAidBox.classList.add('hidden');
+                memoryTag.classList.remove('hidden');
+            }
+
+            // Render Question Sentence
+            const formattedSentence = currentQ.sentence.replace(
+                /(___+)/,
+                `<span id="blank-placeholder" class="border-b-4 border-indigo-500 px-3 py-0.5 text-indigo-600 bg-indigo-50 rounded">___</span>`
+            );
+            document.getElementById('question-text').innerHTML = formattedSentence;
+
+            // Render Option Buttons
+            const optionsContainer = document.getElementById('options-container');
+            optionsContainer.innerHTML = '';
+
+            currentQ.options.forEach((opt, idx) => {
+                const keyShortcut = idx === 0 ? 'A' : 'B';
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = `option-card flex items-center justify-between p-4 rounded-2xl border-2 border-gray-200 bg-white hover:border-indigo-300 text-left transition duration-200 w-full focus:outline-none`;
+                btn.onclick = () => selectOption(opt, btn);
+                btn.setAttribute('data-option', opt);
+
+                btn.innerHTML = `
+                    <div class="flex items-center space-x-3">
+                        <span class="w-8 h-8 rounded-xl bg-gray-100 font-bold text-gray-500 flex items-center justify-center text-xs font-mono border border-gray-200">${keyShortcut}</span>
+                        <span class="font-bold text-lg text-gray-800 font-heading">${opt}</span>
+                    </div>
+                    <div class="radio-indicator w-6 h-6 rounded-full border-2 border-gray-300 flex items-center justify-center text-white text-xs">
+                        <i class="fa-solid fa-check opacity-0"></i>
+                    </div>
+                `;
+                optionsContainer.appendChild(btn);
+            });
+
+            // Reset Action Buttons
+            updateAttemptsUI();
+            document.getElementById('btn-check').classList.remove('hidden');
+            document.getElementById('btn-next').classList.add('hidden');
+        }
+
+        function selectOption(optionValue, element) {
+            selectedOption = optionValue;
+            
+            const cards = document.querySelectorAll('.option-card');
+            cards.forEach(card => {
+                card.classList.remove('selected', 'border-indigo-600', 'bg-indigo-50/50');
+                card.querySelector('.radio-indicator').classList.remove('bg-indigo-600', 'border-indigo-600');
+                card.querySelector('.radio-indicator i').classList.add('opacity-0');
+            });
+
+            element.classList.add('selected', 'border-indigo-600', 'bg-indigo-50/50');
+            const indicator = element.querySelector('.radio-indicator');
+            indicator.classList.add('bg-indigo-600', 'border-indigo-600');
+            indicator.querySelector('i').classList.remove('opacity-0');
+
+            const blank = document.getElementById('blank-placeholder');
+            if (blank) {
+                blank.innerText = optionValue;
+            }
+        }
+
+        function updateAttemptsUI() {
+            document.getElementById('attempts-count').innerText = attemptsLeft;
+        }
+
+        function checkAnswer() {
+            if (!selectedOption) {
+                const container = document.getElementById('options-container');
+                container.classList.add('animate-shake');
+                setTimeout(() => container.classList.remove('animate-shake'), 400);
+                return;
+            }
+
+            const currentQ = activeQuestions[currentQuestionIndex];
+            const isCorrect = selectedOption === currentQ.answer;
+
+            if (isCorrect) {
+                playSound('correct');
+
+                const alreadyHadError = (attemptsLeft < 3);
+                overallHistory.push({
+                    part: currentPart,
+                    question: currentQ.sentence,
+                    correctAnswer: currentQ.answer,
+                    userAnswer: selectedOption,
+                    isFullyCorrect: !alreadyHadError // Counts correct only if passed on 1st attempt
+                });
+
+                const randomPraise = praises[Math.floor(Math.random() * praises.length)];
+                showPraiseModal(true, randomPraise, `"${currentQ.sentence.replace('___', currentQ.answer).replace('______', currentQ.answer)}" is correct!`);
+
+            } else {
+                playSound('wrong');
+                attemptsLeft--;
+                updateAttemptsUI();
+
+                if (attemptsLeft > 0) {
+                    const container = document.getElementById('options-container');
+                    container.classList.add('animate-shake');
+                    setTimeout(() => container.classList.remove('animate-shake'), 400);
+
+                    // Reset option selection
+                    selectedOption = null;
+                    const cards = document.querySelectorAll('.option-card');
+                    cards.forEach(card => {
+                        card.classList.remove('selected', 'border-indigo-600', 'bg-indigo-50/50');
+                        card.querySelector('.radio-indicator').classList.remove('bg-indigo-600', 'border-indigo-600');
+                        card.querySelector('.radio-indicator i').classList.add('opacity-0');
+                    });
+                    const blank = document.getElementById('blank-placeholder');
+                    if (blank) blank.innerText = "___";
+
+                } else {
+                    // Exhausted all 3 attempts
+                    overallHistory.push({
+                        part: currentPart,
+                        question: currentQ.sentence,
+                        correctAnswer: currentQ.answer,
+                        userAnswer: "Failed (3 incorrect attempts)",
+                        isFullyCorrect: false
+                    });
+
+                    showPraiseModal(false, "Out of Attempts!", `The correct answer is: <strong>${currentQ.answer}</strong>`);
+                }
+            }
+        }
+
+        function showPraiseModal(isSuccess, title, message) {
+            const modal = document.getElementById('praise-modal');
+            const iconBox = document.getElementById('modal-icon');
+            const titleEl = document.getElementById('modal-title');
+            const msgEl = document.getElementById('modal-message');
+
+            if (isSuccess) {
+                iconBox.className = "w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-3 text-3xl bg-emerald-100 text-emerald-600";
+                iconBox.innerHTML = `<i class="fa-solid fa-face-smile"></i>`;
+                titleEl.innerText = title;
+                titleEl.className = "text-2xl font-bold font-heading mb-2 text-emerald-600";
+            } else {
+                iconBox.className = "w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-3 text-3xl bg-rose-100 text-rose-600";
+                iconBox.innerHTML = `<i class="fa-solid fa-circle-exclamation"></i>`;
+                titleEl.innerText = title;
+                titleEl.className = "text-2xl font-bold font-heading mb-2 text-rose-600";
+            }
+
+            msgEl.innerHTML = message;
+            modal.classList.remove('hidden');
+        }
+
+        function closePraiseModal() {
+            document.getElementById('praise-modal').classList.add('hidden');
+            
+            document.getElementById('btn-check').classList.add('hidden');
+            document.getElementById('btn-next').classList.remove('hidden');
+
+            nextQuestion();
+        }
+
+        function nextQuestion() {
+            currentQuestionIndex++;
+            if (currentQuestionIndex < activeQuestions.length) {
+                renderQuestion();
+            } else {
+                // Check if transitioning Part 1 -> Part 2 or Finish
+                if (currentPart === 1) {
+                    showTransitionScreen();
+                } else {
+                    showFinalResults();
+                }
+            }
+        }
+
+        function showTransitionScreen() {
+            document.getElementById('screen-quiz').classList.add('hidden');
+            document.getElementById('screen-transition').classList.remove('hidden');
+        }
+
+        /* ==========================================================================
+           FINAL RESULTS LOGIC
+           ========================================================================== */
+        function showFinalResults() {
+            document.getElementById('screen-quiz').classList.add('hidden');
+            document.getElementById('screen-transition').classList.add('hidden');
+            document.getElementById('screen-result').classList.remove('hidden');
+
+            const total = overallHistory.length;
+            const correctCount = overallHistory.filter(q => q.isFullyCorrect).length;
+            const incorrectCount = total - correctCount;
+
+            document.getElementById('stat-total').innerText = total;
+            document.getElementById('stat-correct').innerText = correctCount;
+            document.getElementById('stat-incorrect').innerText = incorrectCount;
+
+            const detailsList = document.getElementById('detailed-results-list');
+            detailsList.innerHTML = '';
+
+            overallHistory.forEach((q, idx) => {
+                const item = document.createElement('div');
+                item.className = `p-3 rounded-xl text-xs border flex items-start justify-between ${
+                    q.isFullyCorrect 
+                        ? 'bg-emerald-50 border-emerald-200 text-emerald-900' 
+                        : 'bg-rose-50 border-rose-200 text-rose-900'
+                }`;
+
+                const fullSentence = q.question.replace('___', q.correctAnswer).replace('______', q.correctAnswer);
+
+                item.innerHTML = `
+                    <div class="flex items-start space-x-2.5">
+                        <span class="mt-0.5 font-bold ${q.isFullyCorrect ? 'text-emerald-600' : 'text-rose-600'}">
+                            ${q.isFullyCorrect ? '<i class="fa-solid fa-circle-check text-sm"></i>' : '<i class="fa-solid fa-circle-xmark text-sm"></i>'}
+                        </span>
+                        <div>
+                            <span class="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded ${q.part === 1 ? 'bg-indigo-100 text-indigo-700' : 'bg-purple-100 text-purple-700'}">Part ${q.part}</span>
+                            <p class="font-bold text-sm text-gray-800 font-heading mt-1">${idx + 1}. ${fullSentence}</p>
+                            ${!q.isFullyCorrect ? `<p class="text-[11px] text-rose-600 mt-0.5">Your answer/status: ${q.userAnswer}</p>` : ''}
+                        </div>
+                    </div>
+                `;
+                detailsList.appendChild(item);
+            });
+        }
+
+        /* ==========================================================================
+           KEYBOARD SHORTCUTS (A/B or 1/2 to select, Enter to check/advance)
+           ========================================================================== */
+        document.addEventListener('keydown', function(event) {
+            const quizVisible = !document.getElementById('screen-quiz').classList.contains('hidden');
+            const modalVisible = !document.getElementById('praise-modal').classList.contains('hidden');
+
+            if (modalVisible) {
+                if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    closePraiseModal();
+                }
+                return;
+            }
+
+            if (quizVisible) {
+                const currentQ = activeQuestions[currentQuestionIndex];
+                if (!currentQ) return;
+
+                if (event.key === '1' || event.key.toLowerCase() === 'a') {
+                    const cards = document.querySelectorAll('.option-card');
+                    if (cards[0]) selectOption(currentQ.options[0], cards[0]);
+                }
+                else if (event.key === '2' || event.key.toLowerCase() === 'b') {
+                    const cards = document.querySelectorAll('.option-card');
+                    if (cards[1]) selectOption(currentQ.options[1], cards[1]);
+                }
+                else if (event.key === 'Enter') {
+                    event.preventDefault();
+                    const checkBtn = document.getElementById('btn-check');
+                    const nextBtn = document.getElementById('btn-next');
+
+                    if (!checkBtn.classList.contains('hidden')) {
+                        checkAnswer();
+                    } else if (!nextBtn.classList.contains('hidden')) {
+                        nextQuestion();
+                    }
+                }
+            }
+        });
+
+    </script>
+</body>
+</html>
