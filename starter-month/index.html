@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>English Dictation Exercise - 12 Months</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Custom animations and glowing effects */
+        @keyframes pulse-ring {
+            0% { transform: scale(0.95); opacity: 0.8; }
+            50% { transform: scale(1.1); opacity: 0.4; }
+            100% { transform: scale(0.95); opacity: 0.8; }
+        }
+        .animate-pulse-slow {
+            animation: pulse-ring 2s infinite ease-in-out;
+        }
+        .char-box {
+            transition: all 0.2s ease-in-out;
+        }
+        .char-box:focus-within {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
+        }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col justify-between selection:bg-blue-500 selection:text-white">
+
+    <!-- Header Section -->
+    <header class="w-full bg-slate-800/80 backdrop-blur border-b border-slate-700 py-4 px-6 sticky top-0 z-50">
+        <div class="max-w-4xl mx-auto flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <div class="p-2 bg-blue-600 rounded-lg text-white">
+                    <i class="fa-solid fa-[#000] fa-headphones text-xl text-white"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold text-white tracking-wide">Dictation Master</h1>
+                    <p class="text-xs text-slate-400">12 Months Practice</p>
+                </div>
+            </div>
+            <div id="progress-indicator" class="hidden text-sm font-semibold bg-slate-700/60 px-4 py-1.5 rounded-full border border-slate-600 text-slate-300">
+                Question <span id="current-q-num" class="text-blue-400">1</span> / <span id="total-q-num">12</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="max-w-4xl mx-auto w-full px-4 py-8 flex-grow flex flex-col justify-center items-center">
+
+        <!-- START SCREEN -->
+        <div id="start-card" class="w-full max-w-lg bg-slate-800 border border-slate-700 rounded-2xl p-8 text-center shadow-2xl">
+            <div class="w-20 h-20 bg-blue-600/20 text-blue-400 rounded-full flex items-center justify-center mx-auto mb-6 border border-blue-500/30">
+                <i class="fa-solid fa-volume-high text-4xl"></i>
+            </div>
+            <h2 class="text-3xl font-extrabold text-white mb-3">Dictation Exercise</h2>
+            <p class="text-slate-300 mb-6 leading-relaxed">
+                Listen carefully and spell the 12 months of the year correctly. 
+                You have up to <span class="text-amber-400 font-bold">3 attempts</span> per question.
+            </p>
+            <div class="bg-slate-900/60 p-4 rounded-xl border border-slate-700/50 mb-8 text-left text-sm text-slate-400 space-y-2">
+                <p><i class="fa-solid fa-circle-info text-blue-400 mr-2"></i><strong>Tips & Controls:</strong></p>
+                <ul class="list-disc list-inside space-y-1 pl-1">
+                    <li>Listen carefully to the female slow audio.</li>
+                    <li>Type directly into the character slots.</li>
+                    <li>Press <kbd class="px-2 py-0.5 bg-slate-700 text-slate-200 rounded text-xs border border-slate-600">Enter</kbd> or tap <strong>Check Answer</strong>.</li>
+                    <li>Single mistake marks the item as incorrect on history!</li>
+                </ul>
+            </div>
+            <button id="start-btn" class="w-full py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-lg rounded-xl shadow-lg transition duration-200 hover:scale-[1.02] active:scale-[0.98]">
+                <i class="fa-solid fa-play mr-2"></i> Start Exercise
+            </button>
+        </div>
+
+        <!-- EXERCISE CARD -->
+        <div id="quiz-card" class="hidden w-full max-w-2xl bg-slate-800 border border-slate-700 rounded-2xl p-6 sm:p-10 shadow-2xl flex flex-col items-center">
+            
+            <!-- Instructions Top -->
+            <div class="text-center mb-6">
+                <span class="inline-block px-3 py-1 bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded-full text-xs font-semibold tracking-wide uppercase mb-2">
+                    Instruction
+                </span>
+                <h2 class="text-xl sm:text-2xl font-bold text-slate-100">
+                    Dictation – Listen and write the word you hear
+                </h2>
+            </div>
+
+            <!-- Big Listen Button Center -->
+            <div class="my-6 relative flex flex-col items-center justify-center">
+                <button id="listen-btn" class="w-24 h-24 sm:w-28 sm:h-28 bg-gradient-to-tr from-blue-600 to-indigo-500 hover:from-blue-500 hover:to-indigo-400 text-white rounded-full flex items-center justify-center shadow-xl hover:shadow-blue-500/25 transition-all duration-300 transform hover:scale-105 active:scale-95 z-10 focus:outline-none ring-4 ring-blue-500/30">
+                    <i class="fa-solid fa-volume-high text-4xl sm:text-5xl"></i>
+                </button>
+                <span class="text-xs text-slate-400 mt-3 font-medium flex items-center gap-1">
+                    <i class="fa-solid fa-rotate-right text-xs"></i> Click to replay audio
+                </span>
+            </div>
+
+            <!-- Attempts Left Badge -->
+            <div id="attempts-container" class="mb-6 text-sm text-slate-400">
+                Attempts remaining for this question: 
+                <span id="attempts-left" class="font-bold text-amber-400">3</span> / 3
+            </div>
+
+            <!-- Character Fill-in Display Area -->
+            <div id="word-slots-container" class="w-full my-4 flex flex-wrap justify-center gap-2 sm:gap-3 px-2">
+                <!-- Character slots will be injected here dynamically -->
+            </div>
+
+            <!-- Hidden input element for real-time keystroke processing & mobile support -->
+            <input type="text" id="hidden-input" class="opacity-0 absolute -z-50" autocomplete="off" autocapitalize="none" spellcheck="false" />
+
+            <!-- Feedback Message -->
+            <div id="feedback-msg" class="h-10 my-2 flex items-center justify-center text-center font-bold text-lg"></div>
+
+            <!-- Action Buttons -->
+            <div class="w-full mt-4 flex flex-col sm:flex-row justify-center items-center gap-4">
+                <button id="check-btn" class="w-full sm:w-auto px-8 py-3.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl shadow-lg transition duration-200 hover:scale-105 active:scale-95 flex items-center justify-center gap-2">
+                    <span>Check Answer</span>
+                    <span class="text-xs bg-blue-700 px-2 py-0.5 rounded border border-blue-400/30 font-normal hidden sm:inline">Enter ↵</span>
+                </button>
+                <button id="next-btn" class="hidden w-full sm:w-auto px-8 py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl shadow-lg transition duration-200 hover:scale-105 active:scale-95 flex items-center justify-center gap-2">
+                    <span>Next Question</span>
+                    <i class="fa-solid fa-arrow-right"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- RESULTS / SUMMARY SCREEN -->
+        <div id="result-card" class="hidden w-full max-w-2xl bg-slate-800 border border-slate-700 rounded-2xl p-8 text-center shadow-2xl">
+            <div class="w-20 h-20 bg-emerald-500/20 text-emerald-400 rounded-full flex items-center justify-center mx-auto mb-4 border border-emerald-500/30">
+                <i class="fa-solid fa-trophy text-4xl"></i>
+            </div>
+            <h2 class="text-3xl font-extrabold text-white mb-2">Exercise Completed!</h2>
+            <p class="text-slate-400 mb-6">Here is a detailed breakdown of your overall performance.</p>
+
+            <!-- Score Summary Cards -->
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-8">
+                <div class="bg-slate-900/60 p-4 rounded-xl border border-slate-700/60">
+                    <p class="text-xs text-slate-400 font-medium">Total Score</p>
+                    <p id="stat-score" class="text-2xl font-black text-blue-400 mt-1">0%</p>
+                </div>
+                <div class="bg-slate-900/60 p-4 rounded-xl border border-slate-700/60">
+                    <p class="text-xs text-slate-400 font-medium">Correct First Try</p>
+                    <p id="stat-correct" class="text-2xl font-black text-emerald-400 mt-1">0 / 12</p>
+                </div>
+                <div class="bg-slate-900/60 p-4 rounded-xl border border-slate-700/60 col-span-2 sm:col-span-1">
+                    <p class="text-xs text-slate-400 font-medium">Incorrect / Hints</p>
+                    <p id="stat-wrong" class="text-2xl font-black text-rose-400 mt-1">0 / 12</p>
+                </div>
+            </div>
+
+            <!-- Detailed Table Breakdown -->
+            <h3 class="text-left font-bold text-slate-200 mb-3 text-sm tracking-wider uppercase">Detailed Results</h3>
+            <div class="max-h-64 overflow-y-auto rounded-xl border border-slate-700 mb-8 custom-scrollbar">
+                <table class="w-full text-left border-collapse text-sm">
+                    <thead class="bg-slate-900/80 sticky top-0 text-slate-400">
+                        <tr>
+                            <th class="p-3 font-semibold">#</th>
+                            <th class="p-3 font-semibold">Target Word</th>
+                            <th class="p-3 font-semibold">Your Answer</th>
+                            <th class="p-3 font-semibold text-center">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="result-table-body" class="divide-y divide-slate-700/50 bg-slate-800/50">
+                        <!-- Result rows generated via JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+
+            <button id="restart-btn" class="w-full py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-lg rounded-xl shadow-lg transition duration-200 hover:scale-[1.02] active:scale-[0.98]">
+                <i class="fa-solid fa-rotate-right mr-2"></i> Try Again
+            </button>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="w-full py-4 text-center text-xs text-slate-500 border-t border-slate-800">
+        English Dictation Web App &bull; Optimized for Mobile & Desktop
+    </footer>
+
+    <!-- JavaScript Application Logic -->
+    <script>
+        // --- DATA & CONSTANTS ---
+        const MONTHS = [
+            "January", "February", "March", "April", "May", "June",
+            "July", "August", "September", "October", "November", "December"
+        ];
+
+        const PRAISE_MESSAGES = ["Well done!", "Good job!", "Excellent!", "Very good!"];
+
+        // State variables
+        let questions = [];
+        let currentIndex = 0;
+        let currentAttempts = 3;
+        let userAnswers = []; // Records user responses for analytics
+        let questionFirstTryStatus = []; // Track if question had 0 errors
+        let voices = [];
+        let femaleVoice = null;
+
+        // --- DOM ELEMENTS ---
+        const startCard = document.getElementById('start-card');
+        const quizCard = document.getElementById('quiz-card');
+        const resultCard = document.getElementById('result-card');
+        const progressIndicator = document.getElementById('progress-indicator');
+        const currentQNum = document.getElementById('current-q-num');
+        const totalQNum = document.getElementById('total-q-num');
+
+        const startBtn = document.getElementById('start-btn');
+        const listenBtn = document.getElementById('listen-btn');
+        const checkBtn = document.getElementById('check-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const restartBtn = document.getElementById('restart-btn');
+
+        const wordSlotsContainer = document.getElementById('word-slots-container');
+        const hiddenInput = document.getElementById('hidden-input');
+        const attemptsLeftEl = document.getElementById('attempts-left');
+        const feedbackMsg = document.getElementById('feedback-msg');
+
+        // Analytics Elements
+        const statScore = document.getElementById('stat-score');
+        const statCorrect = document.getElementById('stat-correct');
+        const statWrong = document.getElementById('stat-wrong');
+        const resultTableBody = document.getElementById('result-table-body');
+
+        // --- WEB AUDIO SYNTHESIS FOR SOUND EFFECTS ---
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        function playCorrectSound() {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            const now = audioCtx.currentTime;
+            
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(523.25, now); // C5
+            osc.frequency.exponentialRampToValueAtTime(659.25, now + 0.1); // E5
+            osc.frequency.exponentialRampToValueAtTime(783.99, now + 0.2); // G5
+            
+            gain.gain.setValueAtTime(0.3, now);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
+            
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            
+            osc.start(now);
+            osc.stop(now + 0.5);
+        }
+
+        function playWrongSound() {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            const now = audioCtx.currentTime;
+            
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(150, now);
+            osc.frequency.linearRampToValueAtTime(100, now + 0.3);
+            
+            gain.gain.setValueAtTime(0.3, now);
+            gain.gain.linearRampToValueAtTime(0.01, now + 0.3);
+            
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            
+            osc.start(now);
+            osc.stop(now + 0.3);
+        }
+
+        // --- SPEECH SYNTHESIS SETUP ---
+        function initVoices() {
+            if ('speechSynthesis' in window) {
+                voices = window.speechSynthesis.getVoices();
+                // Select a female English voice if available
+                femaleVoice = voices.find(v => 
+                    v.lang.startsWith('en') && (
+                        v.name.toLowerCase().includes('female') || 
+                        v.name.toLowerCase().includes('zira') || 
+                        v.name.toLowerCase().includes('samantha') || 
+                        v.name.toLowerCase().includes('victoria') ||
+                        v.name.toLowerCase().includes('karen') ||
+                        v.name.toLowerCase().includes('google us english')
+                    )
+                ) || voices.find(v => v.lang.startsWith('en')) || null;
+            }
+        }
+
+        if ('speechSynthesis' in window) {
+            window.speechSynthesis.onvoiceschanged = initVoices;
+            initVoices();
+        }
+
+        function speakWord(text) {
+            if (!('speechSynthesis' in window)) return;
+            
+            // Cancel active utterances
+            window.speechSynthesis.cancel();
+
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.rate = 0.7; // Slow and clear reading rate
+            utterance.pitch = 1.1; // Slightly higher pitch for female clarity
+
+            if (femaleVoice) {
+                utterance.voice = femaleVoice;
+            }
+
+            window.speechSynthesis.speak(utterance);
+        }
+
+        // --- UTILS ---
+        function shuffleArray(array) {
+            const arr = [...array];
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+            return arr;
+        }
+
+        // --- APP FLOW LOGIC ---
+        function startQuiz() {
+            questions = shuffleArray(MONTHS);
+            currentIndex = 0;
+            userAnswers = new Array(questions.length).fill('');
+            questionFirstTryStatus = new Array(questions.length).fill(true);
+
+            startCard.classList.add('hidden');
+            resultCard.classList.add('hidden');
+            quizCard.classList.remove('hidden');
+            progressIndicator.classList.remove('hidden');
+
+            totalQNum.textContent = questions.length;
+            loadQuestion();
+        }
+
+        function loadQuestion() {
+            currentAttempts = 3;
+            attemptsLeftEl.textContent = currentAttempts;
+            feedbackMsg.textContent = '';
+            feedbackMsg.className = 'h-10 my-2 flex items-center justify-center text-center font-bold text-lg';
+            
+            nextBtn.classList.add('hidden');
+            checkBtn.classList.remove('hidden');
+            checkBtn.disabled = false;
+
+            currentQNum.textContent = currentIndex + 1;
+            const targetWord = questions[currentIndex];
+
+            // Setup display slots for current word
+            renderWordSlots(targetWord);
+
+            // Clear hidden input & focus
+            hiddenInput.value = '';
+            hiddenInput.maxLength = targetWord.length;
+            focusInput();
+
+            // Automatic audio playback when new question begins
+            setTimeout(() => {
+                speakWord(targetWord);
+            }, 300);
+        }
+
+        function renderWordSlots(word) {
+            wordSlotsContainer.innerHTML = '';
+            
+            // Split words if multi-word strings exist (handles spaces cleanly)
+            const words = word.split(' ');
+            let charIndexCounter = 0;
+
+            words.forEach((w, wordIdx) => {
+                const wordGroup = document.createElement('div');
+                wordGroup.className = 'flex gap-1.5 sm:gap-2 items-center my-1';
+
+                for (let i = 0; i < w.length; i++) {
+                    const slot = document.createElement('div');
+                    slot.className = 'char-box w-9 h-12 sm:w-11 sm:h-14 border-b-4 border-slate-600 bg-slate-700/50 rounded-lg flex items-center justify-center text-xl sm:text-2xl font-bold uppercase text-white shadow-inner cursor-pointer';
+                    slot.dataset.index = charIndexCounter;
+                    
+                    const charSpan = document.createElement('span');
+                    charSpan.id = `char-slot-${charIndexCounter}`;
+                    charSpan.textContent = '';
+                    slot.appendChild(charSpan);
+
+                    slot.addEventListener('click', focusInput);
+                    wordGroup.appendChild(slot);
+                    charIndexCounter++;
+                }
+
+                wordSlotsContainer.appendChild(wordGroup);
+
+                // Add wider spacing element if multiple words exist in question
+                if (wordIdx < words.length - 1) {
+                    const spaceBox = document.createElement('div');
+                    spaceBox.className = 'w-4 sm:w-6';
+                    wordSlotsContainer.appendChild(spaceBox);
+                }
+            });
+        }
+
+        function focusInput() {
+            hiddenInput.focus();
+        }
+
+        // Synchronize keyboard inputs with character boxes
+        hiddenInput.addEventListener('input', (e) => {
+            const val = hiddenInput.value;
+            const targetWord = questions[currentIndex].replace(/\s+/g, '');
+
+            for (let i = 0; i < targetWord.length; i++) {
+                const slotText = document.getElementById(`char-slot-${i}`);
+                if (slotText) {
+                    slotText.textContent = val[i] ? val[i] : '';
+                }
+            }
+        });
+
+        // Ensure clicking anywhere inside character area focuses input
+        wordSlotsContainer.addEventListener('click', focusInput);
+
+        // --- ANSWER EVALUATION ---
+        function checkAnswer() {
+            if (nextBtn.classList.contains('hidden') === false) return; // Answer already revealed
+
+            const targetWord = questions[currentIndex];
+            const cleanTarget = targetWord.replace(/\s+/g, '').toLowerCase();
+            const userEntered = hiddenInput.value.trim().toLowerCase();
+
+            if (userEntered.length === 0) {
+                feedbackMsg.className = 'h-10 my-2 flex items-center justify-center text-center font-bold text-base text-amber-400';
+                feedbackMsg.textContent = 'Please type your answer before checking!';
+                return;
+            }
+
+            if (userEntered === cleanTarget) {
+                // Correct Answer Logic
+                playCorrectSound();
+                const randomPraise = PRAISE_MESSAGES[Math.floor(Math.random() * PRAISE_MESSAGES.length)];
+                
+                feedbackMsg.className = 'h-10 my-2 flex items-center justify-center text-center font-bold text-xl text-emerald-400 animate-bounce';
+                feedbackMsg.textContent = `${randomPraise} ✨`;
+
+                userAnswers[currentIndex] = hiddenInput.value.trim();
+
+                checkBtn.classList.add('hidden');
+                nextBtn.classList.remove('hidden');
+                nextBtn.focus();
+            } else {
+                // Wrong Answer Logic
+                playWrongSound();
+                currentAttempts--;
+                questionFirstTryStatus[currentIndex] = false; // Flag that an error occurred for this word
+
+                attemptsLeftEl.textContent = currentAttempts;
+
+                if (currentAttempts > 0) {
+                    feedbackMsg.className = 'h-10 my-2 flex items-center justify-center text-center font-bold text-base text-rose-400';
+                    feedbackMsg.textContent = `Incorrect! Please try again. (${currentAttempts} attempts left)`;
+
+                    // Reset current input fields for retrying
+                    hiddenInput.value = '';
+                    const targetLen = cleanTarget.length;
+                    for (let i = 0; i < targetLen; i++) {
+                        const slotText = document.getElementById(`char-slot-${i}`);
+                        if (slotText) slotText.textContent = '';
+                    }
+                    focusInput();
+                } else {
+                    // Out of attempts (Exceeded 3 attempts) -> Reveal Correct Answer
+                    feedbackMsg.className = 'h-10 my-2 flex items-center justify-center text-center font-bold text-base text-rose-400';
+                    feedbackMsg.textContent = `Out of attempts! Answer: "${targetWord}"`;
+
+                    userAnswers[currentIndex] = hiddenInput.value.trim() || "(No Answer)";
+
+                    // Fill input slots with correct word text visually
+                    const letters = cleanTarget.split('');
+                    letters.forEach((l, idx) => {
+                        const slotText = document.getElementById(`char-slot-${idx}`);
+                        if (slotText) slotText.textContent = l;
+                    });
+
+                    checkBtn.classList.add('hidden');
+                    nextBtn.classList.remove('hidden');
+                    nextBtn.focus();
+                }
+            }
+        }
+
+        // --- NEXT & FINISH LOGIC ---
+        function nextQuestion() {
+            currentIndex++;
+            if (currentIndex < questions.length) {
+                loadQuestion();
+            } else {
+                showResults();
+            }
+        }
+
+        function showResults() {
+            quizCard.classList.add('hidden');
+            progressIndicator.classList.add('hidden');
+            resultCard.classList.remove('hidden');
+
+            let perfectCount = 0;
+            resultTableBody.innerHTML = '';
+
+            questions.forEach((q, idx) => {
+                const isPassedWithoutErrors = questionFirstTryStatus[idx];
+                if (isPassedWithoutErrors) perfectCount++;
+
+                const row = document.createElement('tr');
+                row.className = idx % 2 === 0 ? 'bg-slate-800/30' : 'bg-slate-800/80';
+
+                row.innerHTML = `
+                    <td class="p-3 font-medium text-slate-400">${idx + 1}</td>
+                    <td class="p-3 font-semibold text-white">${q}</td>
+                    <td class="p-3 text-slate-300">${userAnswers[idx] || '-'}</td>
+                    <td class="p-3 text-center">
+                        ${isPassedWithoutErrors 
+                            ? '<span class="px-2.5 py-1 text-xs font-bold rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30"><i class="fa-solid fa-check mr-1"></i> Correct</span>'
+                            : '<span class="px-2.5 py-1 text-xs font-bold rounded-full bg-rose-500/10 text-rose-400 border border-rose-500/30"><i class="fa-solid fa-xmark mr-1"></i> Incorrect</span>'
+                        }
+                    </td>
+                `;
+                resultTableBody.appendChild(row);
+            });
+
+            const total = questions.length;
+            const wrongCount = total - perfectCount;
+            const percentage = Math.round((perfectCount / total) * 100);
+
+            statScore.textContent = `${percentage}%`;
+            statCorrect.textContent = `${perfectCount} / ${total}`;
+            statWrong.textContent = `${wrongCount} / ${total}`;
+        }
+
+        // --- EVENT LISTENERS & KEYBOARD HANDLERS ---
+        startBtn.addEventListener('click', startQuiz);
+        listenBtn.addEventListener('click', () => speakWord(questions[currentIndex]));
+        checkBtn.addEventListener('click', checkAnswer);
+        nextBtn.addEventListener('click', nextQuestion);
+        restartBtn.addEventListener('click', startQuiz);
+
+        // Global keydown handler for Enter key integration
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                if (!quizCard.classList.contains('hidden')) {
+                    if (!checkBtn.classList.contains('hidden')) {
+                        checkAnswer();
+                    } else if (!nextBtn.classList.contains('hidden')) {
+                        nextQuestion();
+                    }
+                }
+            }
+        });
+
+        // Maintain mobile input focus when user taps slot area
+        document.addEventListener('click', (e) => {
+            if (!quizCard.classList.contains('hidden') && nextBtn.classList.contains('hidden')) {
+                if (e.target.closest('#quiz-card') && !e.target.closest('#listen-btn') && !e.target.closest('#check-btn')) {
+                    hiddenInput.focus();
+                }
+            }
+        });
+    </script>
+</body>
+</html>
