@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Water Sports Dictation Practice</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Tone.js for Sound Effects -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 50%, #e0e7ff 100%);
+            min-height: 100vh;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* Pulse animation for the audio button when speaking */
+        @keyframes pulse-ring {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(14, 165, 233, 0.7); }
+            70% { transform: scale(1.05); box-shadow: 0 0 0 20px rgba(14, 165, 233, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(14, 165, 233, 0); }
+        }
+
+        .speaking-pulse {
+            animation: pulse-ring 1.5s infinite cubic-bezier(0.66, 0, 0, 1);
+        }
+
+        /* Shake animation on wrong answer */
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-8px); }
+            40%, 80% { transform: translateX(8px); }
+        }
+
+        .animate-shake {
+            animation: shake 0.4s ease-in-out;
+        }
+
+        /* Pop-in animation for feedback */
+        @keyframes pop-in {
+            0% { opacity: 0; transform: scale(0.85) translateY(10px); }
+            100% { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
+        .animate-pop {
+            animation: pop-in 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+
+        /* Custom subtle scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 9999px; }
+    </style>
+</head>
+<body class="flex items-center justify-center p-4 sm:p-6 text-slate-800">
+
+    <!-- Main App Container -->
+    <main class="w-full max-w-2xl bg-white/95 backdrop-blur-md rounded-3xl shadow-2xl border border-white/60 overflow-hidden transition-all duration-300">
+        
+        <!-- Header / Top Bar -->
+        <header class="bg-sky-600 text-white px-6 py-4 flex items-center justify-between">
+            <div class="flex items-center gap-2.5">
+                <span class="text-2xl" aria-hidden="true">🌊</span>
+                <h1 class="font-bold text-lg sm:text-xl tracking-tight">English Dictation</h1>
+            </div>
+            <div id="progress-badge" class="hidden bg-sky-700/80 px-3.5 py-1 rounded-full text-sm font-semibold tracking-wide border border-sky-400/30">
+                Question <span id="current-q-num">1</span> / <span id="total-q-num">8</span>
+            </div>
+        </header>
+
+        <!-- SCREEN 1: START SCREEN -->
+        <section id="start-screen" class="p-8 sm:p-12 text-center space-y-6">
+            <div class="w-24 h-24 mx-auto bg-sky-100 text-sky-600 rounded-full flex items-center justify-center shadow-inner">
+                <svg class="w-12 h-12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"></path>
+                </svg>
+            </div>
+            
+            <div class="space-y-2">
+                <h2 class="text-2xl sm:text-3xl font-extrabold text-slate-900">Water Sports Vocabulary</h2>
+                <p class="text-slate-600 max-w-md mx-auto text-sm sm:text-base leading-relaxed">
+                    Listen carefully to the pronunciation and type the exact word you hear. You have up to <strong>3 attempts</strong> per word.
+                </p>
+            </div>
+
+            <div class="bg-amber-50 border border-amber-200 rounded-2xl p-4 max-w-md mx-auto text-left text-xs sm:text-sm text-amber-800 space-y-1.5">
+                <p class="font-semibold flex items-center gap-1.5">
+                    <span>💡</span> Quick Rules:
+                </p>
+                <ul class="list-disc list-inside space-y-1 text-amber-700">
+                    <li>Audio plays automatically when each question starts.</li>
+                    <li>Making even <strong>1 mistake</strong> marks that word as incorrect in the final score.</li>
+                    <li>Press <strong>Enter</strong> on your keyboard to check your answer quickly.</li>
+                </ul>
+            </div>
+
+            <div class="pt-2">
+                <button id="start-btn" class="w-full sm:w-auto px-10 py-4 bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 text-white font-bold text-lg rounded-2xl shadow-lg shadow-sky-500/30 transform transition active:scale-95 cursor-pointer">
+                    Start Practice
+                </button>
+            </div>
+        </section>
+
+        <!-- SCREEN 2: QUIZ SCREEN -->
+        <section id="quiz-screen" class="hidden p-6 sm:p-10 space-y-6">
+            
+            <!-- Progress Bar -->
+            <div class="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
+                <div id="progress-bar" class="bg-sky-500 h-full transition-all duration-500 rounded-full" style="width: 12.5%"></div>
+            </div>
+
+            <!-- Instruction & Attempts Indicator -->
+            <div class="text-center space-y-2">
+                <!-- Exact instruction requested -->
+                <p class="text-base sm:text-lg font-semibold text-slate-700 bg-slate-100/80 inline-block px-4 py-1.5 rounded-xl border border-slate-200/70">
+                    Dictation – Nghe và viết từ nghe được
+                </p>
+                
+                <!-- Attempts Counter -->
+                <div class="flex items-center justify-center gap-2 text-xs sm:text-sm font-medium text-slate-500 pt-1">
+                    <span>Attempts left:</span>
+                    <div id="attempts-dots" class="flex gap-1.5">
+                        <span class="w-3 h-3 rounded-full bg-emerald-500"></span>
+                        <span class="w-3 h-3 rounded-full bg-emerald-500"></span>
+                        <span class="w-3 h-3 rounded-full bg-emerald-500"></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Large Center Listen Button -->
+            <div class="flex flex-col items-center justify-center py-2">
+                <button id="listen-btn" type="button" aria-label="Listen to word" class="group relative w-28 h-28 sm:w-32 sm:h-32 rounded-full bg-gradient-to-b from-sky-400 to-sky-600 hover:from-sky-500 hover:to-sky-700 text-white shadow-xl shadow-sky-500/30 flex flex-col items-center justify-center transition-all transform active:scale-95 cursor-pointer focus:outline-none focus:ring-4 focus:ring-sky-300">
+                    <svg class="w-12 h-12 sm:w-14 sm:h-14 transition-transform group-hover:scale-110" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"></path>
+                    </svg>
+                    <span class="text-xs font-bold uppercase tracking-wider mt-1 opacity-90">Listen</span>
+                </button>
+                <span class="text-xs text-slate-400 mt-3">Tap button to replay audio</span>
+            </div>
+
+            <!-- Interactive Letter Slots Container -->
+            <div class="space-y-3">
+                <!-- Visual Underscore Slots (Clickable to focus hidden input) -->
+                <div id="slots-wrapper" class="relative min-h-[76px] p-4 bg-slate-50 border-2 border-slate-200 focus-within:border-sky-500 focus-within:bg-sky-50/30 rounded-2xl flex flex-wrap items-center justify-center gap-y-3 cursor-text transition-colors">
+                    
+                    <!-- Hidden native text input for seamless mobile keyboard & desktop typing -->
+                    <input 
+                        id="hidden-input" 
+                        type="text" 
+                        autocomplete="off" 
+                        autocorrect="off" 
+                        autocapitalize="off" 
+                        spellcheck="false"
+                        aria-label="Type the word you hear"
+                        class="absolute inset-0 w-full h-full opacity-0 cursor-text z-10"
+                    />
+
+                    <!-- Dynamic Character Slots Rendered Here -->
+                    <div id="slots-container" class="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2 pointer-events-none">
+                        <!-- Slots injected via JS -->
+                    </div>
+                </div>
+                <p class="text-center text-xs text-slate-400">
+                    Type the letters above the underscores (<span id="char-count-hint">0</span> letters)
+                </p>
+            </div>
+
+            <!-- Feedback Banner (Praise, Error, or Revealed Answer) -->
+            <div id="feedback-box" class="hidden rounded-2xl p-4 text-center font-bold text-base sm:text-lg animate-pop">
+                <!-- Dynamic feedback text -->
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="pt-2 flex flex-col sm:flex-row gap-3 justify-center">
+                <button id="check-btn" type="button" class="w-full sm:w-auto flex-1 py-3.5 px-6 bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-300 disabled:cursor-not-allowed text-white font-bold text-base sm:text-lg rounded-2xl shadow-md shadow-emerald-600/20 transition transform active:scale-95 cursor-pointer">
+                    Check Answer (Enter)
+                </button>
+                
+                <button id="next-btn" type="button" class="hidden w-full sm:w-auto flex-1 py-3.5 px-6 bg-sky-600 hover:bg-sky-700 text-white font-bold text-base sm:text-lg rounded-2xl shadow-md shadow-sky-600/20 transition transform active:scale-95 cursor-pointer flex items-center justify-center gap-2">
+                    <span>Next Question</span>
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
+                    </svg>
+                </button>
+            </div>
+        </section>
+
+        <!-- SCREEN 3: RESULTS & STATISTICS SCREEN -->
+        <section id="result-screen" class="hidden p-6 sm:p-10 space-y-6">
+            <div class="text-center space-y-2">
+                <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-sky-100 text-sky-600 text-3xl mb-1">
+                    🏆
+                </div>
+                <h2 class="text-2xl sm:text-3xl font-extrabold text-slate-900">Practice Completed!</h2>
+                <p class="text-slate-500 text-sm sm:text-base">Here is your detailed performance breakdown.</p>
+            </div>
+
+            <!-- Score Summary Cards -->
+            <div class="grid grid-cols-3 gap-3 sm:gap-4 text-center">
+                <div class="bg-slate-50 border border-slate-200/80 rounded-2xl p-3 sm:p-4">
+                    <div class="text-xs sm:text-sm font-semibold text-slate-500 uppercase">Total</div>
+                    <div id="stat-total" class="text-2xl sm:text-3xl font-extrabold text-slate-800 mt-1">8</div>
+                </div>
+                <div class="bg-emerald-50 border border-emerald-200 rounded-2xl p-3 sm:p-4">
+                    <div class="text-xs sm:text-sm font-semibold text-emerald-700 uppercase">Correct</div>
+                    <div id="stat-correct" class="text-2xl sm:text-3xl font-extrabold text-emerald-600 mt-1">0</div>
+                </div>
+                <div class="bg-rose-50 border border-rose-200 rounded-2xl p-3 sm:p-4">
+                    <div class="text-xs sm:text-sm font-semibold text-rose-700 uppercase">Incorrect</div>
+                    <div id="stat-wrong" class="text-2xl sm:text-3xl font-extrabold text-rose-600 mt-1">0</div>
+                </div>
+            </div>
+
+            <!-- Detailed Word-by-Word Breakdown -->
+            <div class="space-y-2.5">
+                <h3 class="text-sm font-bold text-slate-700 uppercase tracking-wider px-1">Question Breakdown</h3>
+                <div id="results-list" class="max-h-64 overflow-y-auto space-y-2 pr-1">
+                    <!-- Results items populated via JS -->
+                </div>
+            </div>
+
+            <!-- Restart Button -->
+            <div class="pt-2">
+                <button id="restart-btn" type="button" class="w-full py-4 px-8 bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 text-white font-bold text-lg rounded-2xl shadow-lg shadow-sky-500/30 transition transform active:scale-95 cursor-pointer flex items-center justify-center gap-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                    </svg>
+                    <span>Practice Again (New Order)</span>
+                </button>
+            </div>
+        </section>
+
+    </main>
+
+    <script>
+        /**
+         * Water Sports Dictation Application
+         * Self-contained logic for SpeechSynthesis, Tone.js audio cues,
+         * non-repeating Fisher-Yates shuffle, and strict 3-attempt scoring.
+         */
+        (function() {
+            // 1. Vocabulary & Constants
+            const VOCABULARY = [
+                "swim",
+                "sail",
+                "dive",
+                "surf",
+                "kayak",
+                "windsurf",
+                "snorkel",
+                "waterski"
+            ];
+
+            const PRAISE_PHRASES = [
+                "Well done!",
+                "Good job!",
+                "Excellent!",
+                "Very good!"
+            ];
+
+            const MAX_ATTEMPTS = 3;
+
+            // 2. Application State
+            let previousOrderSignature = "";
+            let questionQueue = [];
+            let currentIndex = 0;
+            let attemptsLeft = MAX_ATTEMPTS;
+            let hadMistakeOnCurrent = false;
+            let isQuestionResolved = false;
+            let sessionResults = []; // Stores { number, word, isCorrect, attemptsUsed }
+            let preferredFemaleVoice = null;
+
+            // 3. DOM Elements
+            const startScreen = document.getElementById("start-screen");
+            const quizScreen = document.getElementById("quiz-screen");
+            const resultScreen = document.getElementById("result-screen");
+
+            const progressBadge = document.getElementById("progress-badge");
+            const currentQNumEl = document.getElementById("current-q-num");
+            const totalQNumEl = document.getElementById("total-q-num");
+            const progressBar = document.getElementById("progress-bar");
+
+            const attemptsDots = document.getElementById("attempts-dots");
+            const listenBtn = document.getElementById("listen-btn");
+            const slotsWrapper = document.getElementById("slots-wrapper");
+            const slotsContainer = document.getElementById("slots-container");
+            const hiddenInput = document.getElementById("hidden-input");
+            const charCountHint = document.getElementById("char-count-hint");
+
+            const feedbackBox = document.getElementById("feedback-box");
+            const checkBtn = document.getElementById("check-btn");
+            const nextBtn = document.getElementById("next-btn");
+
+            const startBtn = document.getElementById("start-btn");
+            const restartBtn = document.getElementById("restart-btn");
+
+            const statTotal = document.getElementById("stat-total");
+            const statCorrect = document.getElementById("stat-correct");
+            const statWrong = document.getElementById("stat-wrong");
+            const resultsList = document.getElementById("results-list");
+
+            // 4. Sound Effects (Tone.js)
+            let synth = null;
+
+            async function initAudioContext() {
+                try {
+                    if (typeof Tone !== "undefined" && Tone.context.state !== "running") {
+                        await Tone.start();
+                    }
+                    if (!synth && typeof Tone !== "undefined") {
+                        synth = new Tone.PolySynth(Tone.Synth, {
+                            oscillator: { type: "triangle" },
+                            envelope: { attack: 0.02, decay: 0.15, sustain: 0.1, release: 0.4 }
+                        }).toDestination();
+                    }
+                } catch (e) {
+                    console.warn("Audio context initialization deferred:", e);
+                }
+            }
+
+            function playSuccessSound() {
+                try {
+                    if (!synth) return;
+                    const now = Tone.now();
+                    // Cheerful ascending major triad + octave
+                    synth.triggerAttackRelease("C5", "16n", now);
+                    synth.triggerAttackRelease("E5", "16n", now + 0.09);
+                    synth.triggerAttackRelease("G5", "16n", now + 0.18);
+                    synth.triggerAttackRelease("C6", "8n", now + 0.27);
+                } catch (e) {
+                    console.warn("Sound error:", e);
+                }
+            }
+
+            function playErrorSound() {
+                try {
+                    if (!synth) return;
+                    const now = Tone.now();
+                    // Gentle low two-tone error buzz
+                    synth.triggerAttackRelease("E3", "16n", now);
+                    synth.triggerAttackRelease("C3", "8n", now + 0.14);
+                } catch (e) {
+                    console.warn("Sound error:", e);
+                }
+            }
+
+            // 5. Text-to-Speech (Slow, Clear Female English Voice)
+            function loadVoices() {
+                if (!("speechSynthesis" in window)) return;
+                const voices = window.speechSynthesis.getVoices();
+                if (!voices.length) return;
+
+                // Prioritize high-quality female English voices across OS/Browsers
+                const femaleKeywords = [
+                    "female", "samantha", "victoria", "karen", "moira", "tessa",
+                    "zira", "hazel", "susan", "google us english", "google uk english female",
+                    "aria", "jenny", "natural"
+                ];
+
+                const englishVoices = voices.filter(v => v.lang && v.lang.toLowerCase().startsWith("en"));
+
+                preferredFemaleVoice = englishVoices.find(v => {
+                    const nameLower = v.name.toLowerCase();
+                    return femaleKeywords.some(kw => nameLower.includes(kw)) && !nameLower.includes("male");
+                }) || englishVoices.find(v => !v.name.toLowerCase().includes("male")) || englishVoices[0] || voices[0];
+            }
+
+            if ("speechSynthesis" in window) {
+                loadVoices();
+                window.speechSynthesis.onvoiceschanged = loadVoices;
+            }
+
+            function speakWord(text) {
+                if (!("speechSynthesis" in window)) return;
+
+                // Cancel any ongoing speech
+                window.speechSynthesis.cancel();
+
+                const utterance = new SpeechSynthesisUtterance(text);
+                if (!preferredFemaleVoice) loadVoices();
+                if (preferredFemaleVoice) {
+                    utterance.voice = preferredFemaleVoice;
+                }
+
+                utterance.lang = "en-US";
+                utterance.rate = 0.72;  // Slow and clear for dictation
+                utterance.pitch = 1.08; // Slightly higher pitch for clear female clarity
+                utterance.volume = 1.0;
+
+                utterance.onstart = () => {
+                    listenBtn.classList.add("speaking-pulse");
+                };
+                utterance.onend = () => {
+                    listenBtn.classList.remove("speaking-pulse");
+                };
+                utterance.onerror = () => {
+                    listenBtn.classList.remove("speaking-pulse");
+                };
+
+                window.speechSynthesis.speak(utterance);
+            }
+
+            // 6. Shuffle Logic (Guaranteed different order from previous session)
+            function generateShuffledWords() {
+                let shuffled = [...VOCABULARY];
+                let signature = "";
+                let safetyCounter = 0;
+
+                do {
+                    for (let i = shuffled.length - 1; i > 0; i--) {
+                        const j = Math.floor(Math.random() * (i + 1));
+                        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+                    }
+                    signature = shuffled.join("|");
+                    safetyCounter++;
+                } while (signature === previousOrderSignature && safetyCounter < 20);
+
+                previousOrderSignature = signature;
+                return shuffled;
+            }
+
+            // 7. Visual Slot Rendering (Underscores with characters directly above)
+            function renderCharacterSlots(targetWord, typedValue) {
+                slotsContainer.innerHTML = "";
+                const targetChars = targetWord.split("");
+                const nonSpaceCount = targetChars.filter(c => c !== " ").length;
+                charCountHint.textContent = nonSpaceCount;
+
+                // Keep raw typed characters aligned with non-space slots, or allow natural spacing
+                // Normalize user input: remove extra spaces if target has none, or map cleanly
+                let cleanTyped = typedValue;
+                if (!targetWord.includes(" ")) {
+                    cleanTyped = typedValue.replace(/\s+/g, "");
+                }
+
+                targetChars.forEach((char, idx) => {
+                    if (char === " ") {
+                        // Visual word separator gap for multi-word phrases
+                        const spaceGap = document.createElement("div");
+                        spaceGap.className = "w-5 sm:w-7 h-12 flex items-end justify-center";
+                        spaceGap.setAttribute("aria-hidden", "true");
+                        slotsContainer.appendChild(spaceGap);
+                    } else {
+                        const slot = document.createElement("div");
+                        const userChar = cleanTyped[idx] || "";
+                        const isActiveCursor = !isQuestionResolved && idx === cleanTyped.length;
+
+                        slot.className = `w-8 sm:w-10 h-12 sm:h-14 flex flex-col items-center justify-end rounded-lg transition-all ${
+                            isActiveCursor ? "bg-sky-100/80 ring-2 ring-sky-400" : ""
+                        }`;
+
+                        // Character displayed directly above the underscore
+                        const letterSpan = document.createElement("span");
+                        letterSpan.className = `text-xl sm:text-2xl font-extrabold uppercase leading-none mb-1 h-6 sm:h-7 flex items-center justify-center ${
+                            isQuestionResolved
+                                ? (hadMistakeOnCurrent && attemptsLeft === 0 ? "text-amber-600" : "text-emerald-600")
+                                : "text-slate-800"
+                        }`;
+                        letterSpan.textContent = userChar;
+
+                        // Underscore symbol "_"
+                        const underscoreSpan = document.createElement("span");
+                        underscoreSpan.className = `text-lg sm:text-xl font-bold leading-none select-none ${
+                            userChar ? "text-sky-600" : "text-slate-400"
+                        }`;
+                        underscoreSpan.textContent = "_";
+
+                        slot.appendChild(letterSpan);
+                        slot.appendChild(underscoreSpan);
+                        slotsContainer.appendChild(slot);
+                    }
+                });
+            }
+
+            // 8. UI Helpers
+            function updateAttemptsUI() {
+                attemptsDots.innerHTML = "";
+                for (let i = 0; i < MAX_ATTEMPTS; i++) {
+                    const dot = document.createElement("span");
+                    if (i < attemptsLeft) {
+                        dot.className = "w-3 h-3 rounded-full bg-emerald-500 transition-all";
+                    } else {
+                        dot.className = "w-3 h-3 rounded-full bg-rose-300 transition-all";
+                    }
+                    attemptsDots.appendChild(dot);
+                }
+            }
+
+            function showFeedback(message, type) {
+                feedbackBox.classList.remove("hidden", "bg-emerald-100", "text-emerald-800", "border-emerald-300", "bg-rose-100", "text-rose-800", "border-rose-300", "bg-amber-100", "text-amber-900", "border-amber-300", "border");
+                
+                if (type === "success") {
+                    feedbackBox.classList.add("bg-emerald-100", "text-emerald-800", "border", "border-emerald-300");
+                } else if (type === "error") {
+                    feedbackBox.classList.add("bg-rose-100", "text-rose-800", "border", "border-rose-300");
+                } else if (type === "reveal") {
+                    feedbackBox.classList.add("bg-amber-100", "text-amber-900", "border", "border-amber-300");
+                }
+
+                feedbackBox.textContent = message;
+            }
+
+            function hideFeedback() {
+                feedbackBox.classList.add("hidden");
+                feedbackBox.textContent = "";
+            }
+
+            // 9. Game Flow Controllers
+            async function startPractice() {
+                await initAudioContext();
+                questionQueue = generateShuffledWords();
+                currentIndex = 0;
+                sessionResults = [];
+
+                totalQNumEl.textContent = questionQueue.length;
+                startScreen.classList.add("hidden");
+                resultScreen.classList.add("hidden");
+                quizScreen.classList.remove("hidden");
+                progressBadge.classList.remove("hidden");
+
+                loadQuestion(currentIndex);
+            }
+
+            function loadQuestion(index) {
+                const targetWord = questionQueue[index];
+                attemptsLeft = MAX_ATTEMPTS;
+                hadMistakeOnCurrent = false;
+                isQuestionResolved = false;
+
+                // Update progress indicators
+                currentQNumEl.textContent = index + 1;
+                const progressPercent = ((index + 1) / questionQueue.length) * 100;
+                progressBar.style.width = `${progressPercent}%`;
+
+                updateAttemptsUI();
+                hideFeedback();
+
+                // Reset input & buttons
+                hiddenInput.value = "";
+                hiddenInput.maxLength = targetWord.length;
+                hiddenInput.disabled = false;
+
+                checkBtn.classList.remove("hidden");
+                nextBtn.classList.add("hidden");
+
+                renderCharacterSlots(targetWord, "");
+
+                // Focus input for immediate typing on desktop & mobile
+                setTimeout(() => {
+                    hiddenInput.focus();
+                }, 80);
+
+                // Automatically play pronunciation when new question starts
+                setTimeout(() => {
+                    speakWord(targetWord);
+                }, 250);
+            }
+
+            function handleInputChange() {
+                if (isQuestionResolved) return;
+                const targetWord = questionQueue[currentIndex];
+                
+                // Filter out spaces if single-word question
+                let val = hiddenInput.value;
+                if (!targetWord.includes(" ")) {
+                    val = val.replace(/\s+/g, "");
+                    hiddenInput.value = val;
+                }
+
+                renderCharacterSlots(targetWord, val);
+            }
+
+            function checkAnswer() {
+                if (isQuestionResolved) return;
+
+                const targetWord = questionQueue[currentIndex];
+                const userAnswer = hiddenInput.value.trim().toLowerCase();
+
+                // Ignore empty submissions
+                if (!userAnswer) {
+                    hiddenInput.focus();
+                    return;
+                }
+
+                if (userAnswer === targetWord.toLowerCase()) {
+                    // CORRECT ANSWER
+                    isQuestionResolved = true;
+                    hiddenInput.disabled = true;
+                    renderCharacterSlots(targetWord, targetWord);
+                    playSuccessSound();
+
+                    const randomPraise = PRAISE_PHRASES[Math.floor(Math.random() * PRAISE_PHRASES.length)];
+                    showFeedback(`🎉 ${randomPraise}`, "success");
+
+                    // Record result: Only counts as correct if 0 mistakes were made on this question
+                    sessionResults.push({
+                        number: currentIndex + 1,
+                        word: targetWord,
+                        isCorrect: !hadMistakeOnCurrent,
+                        mistakesMade: MAX_ATTEMPTS - attemptsLeft
+                    });
+
+                    checkBtn.classList.add("hidden");
+                    nextBtn.classList.remove("hidden");
+                    nextBtn.focus();
+                } else {
+                    // INCORRECT ANSWER
+                    hadMistakeOnCurrent = true;
+                    attemptsLeft--;
+                    updateAttemptsUI();
+                    playErrorSound();
+
+                    // Shake visual feedback
+                    slotsWrapper.classList.remove("animate-shake");
+                    void slotsWrapper.offsetWidth; // trigger reflow
+                    slotsWrapper.classList.add("animate-shake");
+
+                    if (attemptsLeft > 0) {
+                        // Reset current question input for retry
+                        hiddenInput.value = "";
+                        renderCharacterSlots(targetWord, "");
+                        showFeedback(`❌ Incorrect! Please try again (${attemptsLeft} ${attemptsLeft === 1 ? "attempt" : "attempts"} left).`, "error");
+                        hiddenInput.focus();
+                    } else {
+                        // Exceeded 3 allowed attempts -> Reveal correct answer
+                        isQuestionResolved = true;
+                        hiddenInput.disabled = true;
+                        hiddenInput.value = targetWord;
+                        renderCharacterSlots(targetWord, targetWord);
+
+                        showFeedback(`💡 Out of attempts! The correct spelling is: "${targetWord.toUpperCase()}"`, "reveal");
+
+                        sessionResults.push({
+                            number: currentIndex + 1,
+                            word: targetWord,
+                            isCorrect: false,
+                            mistakesMade: MAX_ATTEMPTS
+                        });
+
+                        checkBtn.classList.add("hidden");
+                        nextBtn.classList.remove("hidden");
+                        nextBtn.focus();
+                    }
+                }
+            }
+
+            function goToNextQuestion() {
+                if (currentIndex + 1 < questionQueue.length) {
+                    currentIndex++;
+                    loadQuestion(currentIndex);
+                } else {
+                    showResults();
+                }
+            }
+
+            function showResults() {
+                quizScreen.classList.add("hidden");
+                progressBadge.classList.add("hidden");
+                resultScreen.classList.remove("hidden");
+
+                const totalCount = sessionResults.length;
+                const correctCount = sessionResults.filter(item => item.isCorrect).length;
+                const wrongCount = totalCount - correctCount;
+
+                statTotal.textContent = totalCount;
+                statCorrect.textContent = correctCount;
+                statWrong.textContent = wrongCount;
+
+                resultsList.innerHTML = "";
+                sessionResults.forEach(item => {
+                    const row = document.createElement("div");
+                    row.className = `flex items-center justify-between p-3.5 rounded-xl border ${
+                        item.isCorrect
+                            ? "bg-emerald-50/70 border-emerald-200 text-emerald-900"
+                            : "bg-rose-50/70 border-rose-200 text-rose-900"
+                    }`;
+
+                    const leftInfo = document.createElement("div");
+                    leftInfo.className = "flex items-center gap-3";
+                    leftInfo.innerHTML = `
+                        <span class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${
+                            item.isCorrect ? "bg-emerald-200 text-emerald-800" : "bg-rose-200 text-rose-800"
+                        }">
+                            ${item.number}
+                        </span>
+                        <span class="font-bold text-base tracking-wide">${item.word}</span>
+                    `;
+
+                    const rightBadge = document.createElement("div");
+                    rightBadge.className = "text-xs sm:text-sm font-bold flex items-center gap-1.5";
+                    if (item.isCorrect) {
+                        rightBadge.innerHTML = `<span class="text-emerald-600">✓ Correct</span>`;
+                    } else {
+                        const detail = item.mistakesMade >= MAX_ATTEMPTS ? "Revealed" : "1+ Mistake";
+                        rightBadge.innerHTML = `<span class="text-rose-600">✗ Incorrect (${detail})</span>`;
+                    }
+
+                    row.appendChild(leftInfo);
+                    row.appendChild(rightBadge);
+                    resultsList.appendChild(row);
+                });
+            }
+
+            // 10. Event Listeners
+            startBtn.addEventListener("click", startPractice);
+            restartBtn.addEventListener("click", startPractice);
+
+            listenBtn.addEventListener("click", async () => {
+                await initAudioContext();
+                const currentWord = questionQueue[currentIndex];
+                if (currentWord) {
+                    speakWord(currentWord);
+                }
+                if (!isQuestionResolved) {
+                    hiddenInput.focus();
+                }
+            });
+
+            slotsWrapper.addEventListener("click", () => {
+                if (!isQuestionResolved) {
+                    hiddenInput.focus();
+                }
+            });
+
+            hiddenInput.addEventListener("input", handleInputChange);
+
+            // Desktop Enter key support for checking answer or advancing
+            hiddenInput.addEventListener("keydown", (e) => {
+                if (e.key === "Enter") {
+                    e.preventDefault();
+                    if (!isQuestionResolved) {
+                        checkAnswer();
+                    } else {
+                        goToNextQuestion();
+                    }
+                }
+            });
+
+            // Global Enter shortcut when Next button is visible
+            document.addEventListener("keydown", (e) => {
+                if (e.key === "Enter" && isQuestionResolved && !quizScreen.classList.contains("hidden")) {
+                    // Avoid double trigger if focus is already on nextBtn
+                    if (document.activeElement !== nextBtn) {
+                        e.preventDefault();
+                        goToNextQuestion();
+                    }
+                }
+            });
+
+            checkBtn.addEventListener("click", checkAnswer);
+            nextBtn.addEventListener("click", goToNextQuestion);
+        })();
+    </script>
+</body>
+</html>
