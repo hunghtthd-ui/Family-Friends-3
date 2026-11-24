@@ -1,0 +1,832 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>English Dictation Practice</title>
+    <!-- Tailwind CSS for responsive and modern styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter & JetBrains Mono for crisp letter slots -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@600;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome for clean icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #f0f4ff 0%, #e0e7ff 100%);
+            min-height: 100vh;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .mono-font {
+            font-family: 'JetBrains Mono', monospace;
+        }
+        /* Custom animations for feedback and audio button */
+        @keyframes pulse-ring {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(79, 70, 229, 0.7); }
+            70% { transform: scale(1); box-shadow: 0 0 0 18px rgba(79, 70, 229, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(79, 70, 229, 0); }
+        }
+        .speaking-pulse {
+            animation: pulse-ring 1.5s infinite;
+        }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-8px); }
+            40%, 80% { transform: translateX(8px); }
+        }
+        .animate-shake {
+            animation: shake 0.4s ease-in-out;
+        }
+        @keyframes popIn {
+            0% { opacity: 0; transform: scale(0.85); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+        .animate-pop {
+            animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+        /* Hide actual input visually while keeping it accessible and focusable for mobile keyboards */
+        .hidden-input {
+            position: absolute;
+            opacity: 0;
+            pointer-events: none;
+            width: 1px;
+            height: 1px;
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center p-3 sm:p-6 text-slate-800">
+
+    <!-- Main Application Container -->
+    <main class="w-full max-w-2xl bg-white rounded-3xl shadow-xl border border-indigo-50 overflow-hidden transition-all duration-300">
+        
+        <!-- Top Header / Progress Bar -->
+        <header id="quiz-header" class="bg-indigo-600 text-white px-5 py-4 sm:px-8 sm:py-5 hidden">
+            <div class="flex items-center justify-between mb-2">
+                <span class="text-xs sm:text-sm font-semibold uppercase tracking-wider text-indigo-200">
+                    Question <span id="current-q-num">1</span> of <span id="total-q-num">13</span>
+                </span>
+                <div class="flex items-center gap-1.5" title="Remaining attempts for this word">
+                    <span class="text-xs text-indigo-200 mr-1">Attempts:</span>
+                    <span id="attempt-dots" class="flex gap-1">
+                        <!-- Dots injected dynamically -->
+                    </span>
+                </div>
+            </div>
+            <div class="w-full bg-indigo-900/40 rounded-full h-2.5 overflow-hidden">
+                <div id="progress-bar" class="bg-amber-400 h-2.5 rounded-full transition-all duration-500" style="width: 0%"></div>
+            </div>
+        </header>
+
+        <!-- SCREEN 1: Welcome / Start Screen -->
+        <section id="start-screen" class="p-6 sm:p-12 text-center">
+            <div class="w-20 h-20 bg-indigo-100 text-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-sm">
+                <i class="fas fa-headphones-alt text-4xl"></i>
+            </div>
+            <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-900 mb-3">
+                English Dictation Practice
+            </h1>
+            <p class="text-slate-600 text-sm sm:text-base max-w-md mx-auto mb-6 leading-relaxed">
+                Listen carefully to the pronunciation and type the exact word or phrase you hear. You have up to <strong>3 attempts</strong> per question, but any mistake marks the question as incorrect in your final score!
+            </p>
+            <div class="bg-amber-50 border border-amber-200 rounded-2xl p-4 mb-8 text-left max-w-md mx-auto text-xs sm:text-sm text-amber-900 flex items-start gap-3">
+                <i class="fas fa-volume-up text-amber-500 text-lg mt-0.5"></i>
+                <div>
+                    <p class="font-semibold">Audio Tip:</p>
+                    <p>Make sure your device sound is turned on. The audio will play automatically when each question starts.</p>
+                </div>
+            </div>
+            <button id="start-btn" class="w-full sm:w-auto px-10 py-4 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white font-bold text-lg rounded-2xl shadow-lg shadow-indigo-200 transition-all cursor-pointer">
+                Start Practice <i class="fas fa-arrow-right ml-2"></i>
+            </button>
+        </section>
+
+        <!-- SCREEN 2: Active Quiz Screen -->
+        <section id="quiz-screen" class="p-5 sm:p-10 text-center hidden">
+            
+            <!-- Required Instruction Text -->
+            <div class="mb-6">
+                <span class="inline-block bg-indigo-50 text-indigo-700 font-semibold px-4 py-2 rounded-xl text-sm sm:text-base border border-indigo-100">
+                    Dictation – Nghe và viết từ nghe được
+                </span>
+            </div>
+
+            <!-- Big Center Audio Button -->
+            <div class="my-6 flex flex-col items-center justify-center">
+                <button id="listen-btn" type="button" aria-label="Listen to word" 
+                    class="w-24 h-24 sm:w-28 sm:h-28 rounded-full bg-gradient-to-tr from-indigo-600 to-blue-500 hover:from-indigo-700 hover:to-blue-600 active:scale-95 text-white flex items-center justify-center shadow-xl shadow-indigo-200 transition-all cursor-pointer focus:outline-none focus:ring-4 focus:ring-indigo-300">
+                    <i class="fas fa-volume-up text-4xl sm:text-5xl"></i>
+                </button>
+                <span class="text-xs text-slate-400 mt-3 font-medium">Tap icon to listen again</span>
+            </div>
+
+            <!-- Interactive Letter Slots Container -->
+            <div class="mt-6 mb-4">
+                <p class="text-xs text-slate-500 mb-3 font-medium">Tap the underscores below to type:</p>
+                
+                <!-- Visual Underscore Slots (Clicking focuses hidden input) -->
+                <div id="slots-wrapper" class="flex flex-wrap items-center justify-center gap-y-4 gap-x-4 sm:gap-x-6 p-4 rounded-2xl bg-slate-50 border-2 border-dashed border-slate-200 hover:border-indigo-300 transition-colors cursor-text min-h-[96px]">
+                    <!-- Word groups and character slots generated via JS -->
+                </div>
+
+                <!-- Hidden Text Input for seamless Desktop & Mobile Keyboard entry -->
+                <input type="text" id="hidden-typing-input" class="hidden-input" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" aria-label="Type your answer here">
+            </div>
+
+            <!-- Feedback Message Area (Praise, Try Again, or Revealed Answer) -->
+            <div id="feedback-box" class="min-h-[68px] flex flex-col items-center justify-center my-4">
+                <!-- Dynamic feedback injected here -->
+            </div>
+
+            <!-- Action Buttons (Check Answer / Next Question) -->
+            <div class="mt-4 flex flex-col sm:flex-row items-center justify-center gap-3">
+                <button id="check-btn" type="button" class="w-full sm:w-auto px-8 py-3.5 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white font-bold rounded-2xl shadow-md transition-all cursor-pointer">
+                    Check Answer <span class="hidden sm:inline text-xs font-normal opacity-80 ml-1">(Enter)</span>
+                </button>
+                <button id="next-btn" type="button" class="hidden w-full sm:w-auto px-8 py-3.5 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold rounded-2xl shadow-md transition-all cursor-pointer animate-pop">
+                    Next Question <i class="fas fa-arrow-right ml-2"></i>
+                </button>
+            </div>
+        </section>
+
+        <!-- SCREEN 3: Results & Detailed Breakdown Screen -->
+        <section id="results-screen" class="p-6 sm:p-10 hidden">
+            <div class="text-center mb-8">
+                <div id="result-badge" class="w-20 h-20 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center mx-auto mb-4 text-4xl">
+                    <i class="fas fa-trophy"></i>
+                </div>
+                <h2 class="text-2xl sm:text-3xl font-extrabold text-slate-900">Practice Completed!</h2>
+                <p class="text-slate-500 text-sm sm:text-base mt-1">Here is your detailed performance report</p>
+            </div>
+
+            <!-- Summary Statistics Cards -->
+            <div class="grid grid-cols-3 gap-3 sm:gap-4 mb-8">
+                <div class="bg-slate-50 border border-slate-200 rounded-2xl p-3 sm:p-4 text-center">
+                    <div class="text-xs sm:text-sm font-semibold text-slate-500 uppercase">Total</div>
+                    <div id="stat-total" class="text-2xl sm:text-3xl font-extrabold text-slate-800 mt-1">13</div>
+                </div>
+                <div class="bg-emerald-50 border border-emerald-200 rounded-2xl p-3 sm:p-4 text-center">
+                    <div class="text-xs sm:text-sm font-semibold text-emerald-600 uppercase">Correct</div>
+                    <div id="stat-correct" class="text-2xl sm:text-3xl font-extrabold text-emerald-700 mt-1">0</div>
+                </div>
+                <div class="bg-rose-50 border border-rose-200 rounded-2xl p-3 sm:p-4 text-center">
+                    <div class="text-xs sm:text-sm font-semibold text-rose-600 uppercase">Incorrect</div>
+                    <div id="stat-incorrect" class="text-2xl sm:text-3xl font-extrabold text-rose-700 mt-1">0</div>
+                </div>
+            </div>
+
+            <!-- Detailed Question-by-Question Breakdown -->
+            <div class="mb-8">
+                <h3 class="text-sm font-bold uppercase tracking-wider text-slate-500 mb-3">Question Breakdown</h3>
+                <div id="breakdown-list" class="space-y-2.5 max-h-72 overflow-y-auto pr-1">
+                    <!-- Results items injected here -->
+                </div>
+            </div>
+
+            <!-- Restart Button -->
+            <div class="text-center">
+                <button id="restart-btn" type="button" class="w-full sm:w-auto px-10 py-4 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white font-bold text-lg rounded-2xl shadow-lg shadow-indigo-200 transition-all cursor-pointer">
+                    <i class="fas fa-redo-alt mr-2"></i> Practice Again
+                </button>
+            </div>
+        </section>
+
+    </main>
+
+    <script>
+        /**
+         * VOCABULARY LIST (Exact 13 items requested)
+         */
+        const VOCABULARY = [
+            "reading comics",
+            "skateboarding",
+            "doing gymnastics",
+            "playing chess",
+            "fishing",
+            "playing basketball",
+            "taking photos",
+            "playing volleyball",
+            "cube",
+            "bike",
+            "kite",
+            "rope",
+            "stone"
+        ];
+
+        const PRAISE_PHRASES = [
+            "Well done",
+            "Good job",
+            "Excellent",
+            "Very good"
+        ];
+
+        const MAX_ATTEMPTS = 3;
+
+        /**
+         * APPLICATION STATE
+         */
+        let state = {
+            questions: [],
+            previousOrderSignature: "",
+            currentIndex: 0,
+            attemptsLeft: MAX_ATTEMPTS,
+            hasMadeAnyMistakeOnCurrent: false,
+            isQuestionResolved: false,
+            results: [], // { questionNumber, word, isCorrectFirstTry }
+            selectedFemaleVoice: null,
+            audioCtx: null
+        };
+
+        /**
+         * DOM ELEMENTS
+         */
+        const els = {
+            quizHeader: document.getElementById('quiz-header'),
+            currentQNum: document.getElementById('current-q-num'),
+            totalQNum: document.getElementById('total-q-num'),
+            attemptDots: document.getElementById('attempt-dots'),
+            progressBar: document.getElementById('progress-bar'),
+
+            startScreen: document.getElementById('start-screen'),
+            quizScreen: document.getElementById('quiz-screen'),
+            resultsScreen: document.getElementById('results-screen'),
+
+            startBtn: document.getElementById('start-btn'),
+            listenBtn: document.getElementById('listen-btn'),
+            slotsWrapper: document.getElementById('slots-wrapper'),
+            hiddenInput: document.getElementById('hidden-typing-input'),
+            feedbackBox: document.getElementById('feedback-box'),
+            checkBtn: document.getElementById('check-btn'),
+            nextBtn: document.getElementById('next-btn'),
+            restartBtn: document.getElementById('restart-btn'),
+
+            statTotal: document.getElementById('stat-total'),
+            statCorrect: document.getElementById('stat-correct'),
+            statIncorrect: document.getElementById('stat-incorrect'),
+            breakdownList: document.getElementById('breakdown-list')
+        };
+
+        /**
+         * WEB AUDIO API SOUND EFFECTS (No external URLs needed, works reliably offline/GitHub)
+         */
+        function initAudioContext() {
+            if (!state.audioCtx) {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                if (AudioContext) {
+                    state.audioCtx = new AudioContext();
+                }
+            }
+            if (state.audioCtx && state.audioCtx.state === 'suspended') {
+                state.audioCtx.resume();
+            }
+        }
+
+        function playSuccessSound() {
+            try {
+                initAudioContext();
+                if (!state.audioCtx) return;
+                const now = state.audioCtx.currentTime;
+                const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
+                notes.forEach((freq, idx) => {
+                    const osc = state.audioCtx.createOscillator();
+                    const gain = state.audioCtx.createGain();
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(freq, now + idx * 0.09);
+                    
+                    gain.gain.setValueAtTime(0.01, now + idx * 0.09);
+                    gain.gain.exponentialRampToValueAtTime(0.22, now + idx * 0.09 + 0.03);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.09 + 0.35);
+                    
+                    osc.connect(gain);
+                    gain.connect(state.audioCtx.destination);
+                    osc.start(now + idx * 0.09);
+                    osc.stop(now + idx * 0.09 + 0.36);
+                });
+            } catch (e) {
+                console.warn("Audio effect skipped:", e);
+            }
+        }
+
+        function playErrorSound() {
+            try {
+                initAudioContext();
+                if (!state.audioCtx) return;
+                const now = state.audioCtx.currentTime;
+                const notes = [220, 175]; // Low buzz down
+                notes.forEach((freq, idx) => {
+                    const osc = state.audioCtx.createOscillator();
+                    const gain = state.audioCtx.createGain();
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(freq, now + idx * 0.14);
+                    
+                    gain.gain.setValueAtTime(0.01, now + idx * 0.14);
+                    gain.gain.exponentialRampToValueAtTime(0.18, now + idx * 0.14 + 0.02);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.14 + 0.28);
+                    
+                    osc.connect(gain);
+                    gain.connect(state.audioCtx.destination);
+                    osc.start(now + idx * 0.14);
+                    osc.stop(now + idx * 0.14 + 0.3);
+                });
+            } catch (e) {
+                console.warn("Audio effect skipped:", e);
+            }
+        }
+
+        /**
+         * SPEECH SYNTHESIS (Clear, slow female English voice)
+         */
+        function loadFemaleVoice() {
+            if (!('speechSynthesis' in window)) return;
+            const voices = window.speechSynthesis.getVoices();
+            if (!voices.length) return;
+
+            // Priority list for natural female English voices across Windows, macOS, iOS, Android, Chrome
+            const preferredKeywords = [
+                'google us english',
+                'google uk english female',
+                'microsoft zira',
+                'microsoft aria',
+                'microsoft jenny',
+                'samantha',
+                'victoria',
+                'karen',
+                'moira',
+                'tessa',
+                'female',
+                'woman'
+            ];
+
+            const englishVoices = voices.filter(v => v.lang && v.lang.toLowerCase().startsWith('en'));
+            
+            for (const keyword of preferredKeywords) {
+                const match = englishVoices.find(v => v.name.toLowerCase().includes(keyword));
+                if (match) {
+                    state.selectedFemaleVoice = match;
+                    return;
+                }
+            }
+
+            // Fallback to any English voice
+            if (englishVoices.length > 0) {
+                state.selectedFemaleVoice = englishVoices[0];
+            }
+        }
+
+        if ('speechSynthesis' in window) {
+            loadFemaleVoice();
+            window.speechSynthesis.onvoiceschanged = loadFemaleVoice;
+        }
+
+        function speakText(text, isPraise = false) {
+            if (!('speechSynthesis' in window)) return;
+            try {
+                window.speechSynthesis.cancel();
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'en-US';
+                
+                if (state.selectedFemaleVoice) {
+                    utterance.voice = state.selectedFemaleVoice;
+                }
+
+                // Slow and clear for dictation; slightly livelier for praise
+                utterance.rate = isPraise ? 0.95 : 0.72;
+                utterance.pitch = 1.1; // Gentle female pitch
+
+                if (!isPraise) {
+                    utterance.onstart = () => els.listenBtn.classList.add('speaking-pulse');
+                    utterance.onend = () => els.listenBtn.classList.remove('speaking-pulse');
+                    utterance.onerror = () => els.listenBtn.classList.remove('speaking-pulse');
+                }
+
+                window.speechSynthesis.speak(utterance);
+            } catch (e) {
+                console.warn("Speech synthesis error:", e);
+            }
+        }
+
+        /**
+         * SHUFFLE ALGORITHM (Ensures new order never repeats the immediate previous run)
+         */
+        function generateNonRepeatingShuffle(sourceArray) {
+            let shuffled = [...sourceArray];
+            let signature = "";
+            let safetyCounter = 0;
+
+            do {
+                for (let i = shuffled.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+                }
+                signature = shuffled.join('|');
+                safetyCounter++;
+            } while (signature === state.previousOrderSignature && safetyCounter < 20);
+
+            state.previousOrderSignature = signature;
+            return shuffled;
+        }
+
+        /**
+         * RENDER LETTER SLOTS WITH UNDERSCORES
+         * - Shows exact count of "_" matching characters to fill
+         * - Separates multi-word phrases by a clear space
+         * - Displays typed letters directly above each "_"
+         */
+        function buildLetterSlots(targetPhrase) {
+            els.slotsWrapper.innerHTML = '';
+            const words = targetPhrase.split(' ');
+            let globalCharIndex = 0;
+
+            words.forEach((word, wordIdx) => {
+                // Group each word so words wrap cleanly on mobile without splitting mid-word
+                const wordGroup = document.createElement('div');
+                wordGroup.className = 'flex items-end gap-1.5 sm:gap-2';
+                
+                // Add visual space indicator between words
+                if (wordIdx > 0) {
+                    const spaceGap = document.createElement('div');
+                    spaceGap.className = 'w-4 sm:w-6 flex items-end justify-center pb-1 text-slate-300 text-xs select-none';
+                    spaceGap.innerHTML = '&nbsp;';
+                    els.slotsWrapper.appendChild(spaceGap);
+                }
+
+                for (let i = 0; i < word.length; i++) {
+                    const slotContainer = document.createElement('div');
+                    slotContainer.className = 'flex flex-col items-center w-6 sm:w-8 select-none';
+                    slotContainer.dataset.charIndex = globalCharIndex;
+
+                    // Typed character displayed right above "_"
+                    const charDisplay = document.createElement('span');
+                    charDisplay.className = 'char-letter mono-font text-xl sm:text-2xl font-bold text-indigo-700 h-8 sm:h-9 flex items-center justify-center transition-all';
+                    charDisplay.textContent = '';
+
+                    // Underscore symbol "_"
+                    const underscoreDisplay = document.createElement('span');
+                    underscoreDisplay.className = 'char-underscore mono-font text-xl sm:text-2xl font-bold text-slate-400 leading-none -mt-1';
+                    underscoreDisplay.textContent = '_';
+
+                    slotContainer.appendChild(charDisplay);
+                    slotContainer.appendChild(underscoreDisplay);
+                    wordGroup.appendChild(slotContainer);
+
+                    globalCharIndex++;
+                }
+
+                els.slotsWrapper.appendChild(wordGroup);
+            });
+        }
+
+        /**
+         * Synchronizes hidden input text into the visual character slots above "_"
+         */
+        function syncInputToSlots() {
+            const targetPhrase = state.questions[state.currentIndex];
+            const cleanTarget = targetPhrase.replace(/\s+/g, '');
+            const maxChars = cleanTarget.length;
+
+            // Remove spaces from user input so characters map cleanly into the letter slots
+            let rawVal = els.hiddenInput.value.replace(/[^a-zA-Z]/g, '');
+            if (rawVal.length > maxChars) {
+                rawVal = rawVal.slice(0, maxChars);
+            }
+            els.hiddenInput.value = rawVal;
+
+            const slotContainers = els.slotsWrapper.querySelectorAll('[data-char-index]');
+            slotContainers.forEach((slot, idx) => {
+                const letterEl = slot.querySelector('.char-letter');
+                const underscoreEl = slot.querySelector('.char-underscore');
+                const char = rawVal[idx] || '';
+
+                letterEl.textContent = char;
+
+                // Highlight active cursor slot
+                if (!state.isQuestionResolved && idx === rawVal.length && document.activeElement === els.hiddenInput) {
+                    underscoreEl.classList.remove('text-slate-400', 'text-indigo-500');
+                    underscoreEl.classList.add('text-amber-500', 'scale-110');
+                } else if (char) {
+                    underscoreEl.classList.remove('text-slate-400', 'text-amber-500', 'scale-110');
+                    underscoreEl.classList.add('text-indigo-500');
+                } else {
+                    underscoreEl.classList.remove('text-indigo-500', 'text-amber-500', 'scale-110');
+                    underscoreEl.classList.add('text-slate-400');
+                }
+            });
+        }
+
+        /**
+         * Renders Attempt Indicator Dots
+         */
+        function updateAttemptDots() {
+            els.attemptDots.innerHTML = '';
+            for (let i = 0; i < MAX_ATTEMPTS; i++) {
+                const dot = document.createElement('span');
+                if (i < state.attemptsLeft) {
+                    dot.className = 'w-2.5 h-2.5 rounded-full bg-amber-400 shadow-sm';
+                } else {
+                    dot.className = 'w-2.5 h-2.5 rounded-full bg-indigo-900/50 border border-indigo-400/30';
+                }
+                els.attemptDots.appendChild(dot);
+            }
+        }
+
+        /**
+         * LOAD A QUESTION
+         */
+        function loadQuestion(index) {
+            state.currentIndex = index;
+            state.attemptsLeft = MAX_ATTEMPTS;
+            state.hasMadeAnyMistakeOnCurrent = false;
+            state.isQuestionResolved = false;
+
+            const currentWord = state.questions[index];
+
+            // Update Header & Progress
+            els.currentQNum.textContent = index + 1;
+            els.totalQNum.textContent = state.questions.length;
+            const progressPercent = (index / state.questions.length) * 100;
+            els.progressBar.style.width = `${progressPercent}%`;
+            updateAttemptDots();
+
+            // Reset UI Controls
+            els.feedbackBox.innerHTML = '';
+            els.checkBtn.classList.remove('hidden');
+            els.nextBtn.classList.add('hidden');
+            els.hiddenInput.disabled = false;
+            els.hiddenInput.value = '';
+
+            // Build slots & focus input
+            buildLetterSlots(currentWord);
+            syncInputToSlots();
+            focusTypingInput();
+
+            // Automatically pronounce the new word after a brief transition pause
+            setTimeout(() => {
+                speakText(currentWord, false);
+            }, 350);
+        }
+
+        function focusTypingInput() {
+            if (!state.isQuestionResolved) {
+                els.hiddenInput.focus();
+                syncInputToSlots();
+            }
+        }
+
+        /**
+         * CHECK USER ANSWER
+         */
+        function handleCheckAnswer() {
+            if (state.isQuestionResolved) return;
+
+            const targetPhrase = state.questions[state.currentIndex];
+            const normalizedTarget = targetPhrase.replace(/\s+/g, '').toLowerCase();
+            const userTyped = els.hiddenInput.value.replace(/\s+/g, '').toLowerCase();
+
+            // Ignore empty submission
+            if (userTyped.length === 0) {
+                els.slotsWrapper.classList.add('animate-shake');
+                setTimeout(() => els.slotsWrapper.classList.remove('animate-shake'), 400);
+                focusTypingInput();
+                return;
+            }
+
+            if (userTyped === normalizedTarget) {
+                // CORRECT ANSWER
+                state.isQuestionResolved = true;
+                els.hiddenInput.disabled = true;
+
+                // Record result: only true if 0 mistakes were made on this question
+                state.results.push({
+                    questionNumber: state.currentIndex + 1,
+                    word: targetPhrase,
+                    isCorrect: !state.hasMadeAnyMistakeOnCurrent
+                });
+
+                // Highlight slots in green
+                els.slotsWrapper.querySelectorAll('.char-letter').forEach(el => {
+                    el.classList.remove('text-indigo-700');
+                    el.classList.add('text-emerald-600');
+                });
+                els.slotsWrapper.querySelectorAll('.char-underscore').forEach(el => {
+                    el.classList.remove('text-indigo-500', 'text-amber-500');
+                    el.classList.add('text-emerald-500');
+                });
+
+                // Random praise phrase
+                const praise = PRAISE_PHRASES[Math.floor(Math.random() * PRAISE_PHRASES.length)];
+                els.feedbackBox.innerHTML = `
+                    <div class="animate-pop flex items-center gap-2 bg-emerald-50 border border-emerald-200 text-emerald-700 px-5 py-2.5 rounded-2xl font-bold text-lg shadow-sm">
+                        <i class="fas fa-check-circle text-emerald-500 text-xl"></i>
+                        <span>${praise}!</span>
+                    </div>
+                `;
+
+                playSuccessSound();
+                setTimeout(() => speakText(praise, true), 350);
+
+                // Swap Check button with Next Question button
+                els.checkBtn.classList.add('hidden');
+                els.nextBtn.classList.remove('hidden');
+                els.nextBtn.innerHTML = state.currentIndex === state.questions.length - 1
+                    ? 'See Results <i class="fas fa-flag-checkered ml-2"></i>'
+                    : 'Next Question <i class="fas fa-arrow-right ml-2"></i>';
+                els.nextBtn.focus();
+
+            } else {
+                // INCORRECT ANSWER
+                state.hasMadeAnyMistakeOnCurrent = true;
+                state.attemptsLeft--;
+                updateAttemptDots();
+                playErrorSound();
+
+                // Shake animation
+                els.slotsWrapper.classList.add('animate-shake');
+                setTimeout(() => els.slotsWrapper.classList.remove('animate-shake'), 400);
+
+                if (state.attemptsLeft > 0) {
+                    // Reset the current question input so the student tries again
+                    els.hiddenInput.value = '';
+                    syncInputToSlots();
+                    focusTypingInput();
+
+                    els.feedbackBox.innerHTML = `
+                        <div class="animate-pop text-rose-600 font-semibold text-sm sm:text-base flex items-center gap-2 bg-rose-50 border border-rose-200 px-4 py-2 rounded-xl">
+                            <i class="fas fa-times-circle"></i>
+                            <span>Incorrect! Try again (${state.attemptsLeft} ${state.attemptsLeft === 1 ? 'attempt' : 'attempts'} left).</span>
+                        </div>
+                    `;
+                } else {
+                    // Exceeded 3 allowed attempts -> Reveal the correct answer
+                    state.isQuestionResolved = true;
+                    els.hiddenInput.disabled = true;
+
+                    state.results.push({
+                        questionNumber: state.currentIndex + 1,
+                        word: targetPhrase,
+                        isCorrect: false
+                    });
+
+                    // Fill slots with the correct answer in amber/rose for learning
+                    const cleanTargetChars = targetPhrase.replace(/\s+/g, '');
+                    const slotContainers = els.slotsWrapper.querySelectorAll('[data-char-index]');
+                    slotContainers.forEach((slot, idx) => {
+                        const letterEl = slot.querySelector('.char-letter');
+                        const underscoreEl = slot.querySelector('.char-underscore');
+                        letterEl.textContent = cleanTargetChars[idx] || '';
+                        letterEl.classList.remove('text-indigo-700');
+                        letterEl.classList.add('text-rose-600');
+                        underscoreEl.classList.add('text-rose-400');
+                    });
+
+                    els.feedbackBox.innerHTML = `
+                        <div class="animate-pop bg-rose-50 border border-rose-200 text-rose-800 px-5 py-3 rounded-2xl text-sm sm:text-base">
+                            <p class="font-bold text-rose-600 mb-0.5"><i class="fas fa-exclamation-circle mr-1"></i> Out of attempts!</p>
+                            <p>Correct answer: <span class="font-extrabold text-slate-900 underline decoration-rose-400 decoration-2">${targetPhrase}</span></p>
+                        </div>
+                    `;
+
+                    // Pronounce the correct word once more so the student connects spelling & sound
+                    setTimeout(() => speakText(targetPhrase, false), 400);
+
+                    els.checkBtn.classList.add('hidden');
+                    els.nextBtn.classList.remove('hidden');
+                    els.nextBtn.innerHTML = state.currentIndex === state.questions.length - 1
+                        ? 'See Results <i class="fas fa-flag-checkered ml-2"></i>'
+                        : 'Next Question <i class="fas fa-arrow-right ml-2"></i>';
+                    els.nextBtn.focus();
+                }
+            }
+        }
+
+        /**
+         * SHOW FINAL RESULTS & QUESTION-BY-QUESTION BREAKDOWN
+         */
+        function showResultsScreen() {
+            els.progressBar.style.width = '100%';
+            els.quizHeader.classList.add('hidden');
+            els.quizScreen.classList.add('hidden');
+            els.resultsScreen.classList.remove('hidden');
+
+            const total = state.results.length;
+            const correctCount = state.results.filter(r => r.isCorrect).length;
+            const incorrectCount = total - correctCount;
+
+            els.statTotal.textContent = total;
+            els.statCorrect.textContent = correctCount;
+            els.statIncorrect.textContent = incorrectCount;
+
+            // Populate detailed list
+            els.breakdownList.innerHTML = '';
+            state.results.forEach(item => {
+                const row = document.createElement('div');
+                row.className = `flex items-center justify-between p-3.5 rounded-xl border ${
+                    item.isCorrect 
+                        ? 'bg-emerald-50/70 border-emerald-200 text-emerald-900' 
+                        : 'bg-rose-50/70 border-rose-200 text-rose-900'
+                }`;
+
+                row.innerHTML = `
+                    <div class="flex items-center gap-3">
+                        <span class="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold ${
+                            item.isCorrect ? 'bg-emerald-200 text-emerald-800' : 'bg-rose-200 text-rose-800'
+                        }">
+                            #${item.questionNumber}
+                        </span>
+                        <span class="font-bold text-sm sm:text-base">${item.word}</span>
+                    </div>
+                    <div class="flex items-center gap-1.5 text-xs sm:text-sm font-bold ${
+                        item.isCorrect ? 'text-emerald-600' : 'text-rose-600'
+                    }">
+                        ${item.isCorrect 
+                            ? '<i class="fas fa-check-circle"></i> <span>Correct</span>' 
+                            : '<i class="fas fa-times-circle"></i> <span>Incorrect</span>'}
+                    </div>
+                `;
+                els.breakdownList.appendChild(row);
+            });
+        }
+
+        /**
+         * START / RESTART GAME
+         */
+        function startGame() {
+            initAudioContext();
+            loadFemaleVoice();
+
+            state.questions = generateNonRepeatingShuffle(VOCABULARY);
+            state.results = [];
+            state.currentIndex = 0;
+
+            els.startScreen.classList.add('hidden');
+            els.resultsScreen.classList.add('hidden');
+            els.quizHeader.classList.remove('hidden');
+            els.quizScreen.classList.remove('hidden');
+
+            loadQuestion(0);
+        }
+
+        /**
+         * EVENT LISTENERS
+         */
+        els.startBtn.addEventListener('click', startGame);
+        els.restartBtn.addEventListener('click', startGame);
+
+        // Big center listen button
+        els.listenBtn.addEventListener('click', () => {
+            initAudioContext();
+            const currentWord = state.questions[state.currentIndex];
+            if (currentWord) {
+                speakText(currentWord, false);
+            }
+            focusTypingInput();
+        });
+
+        // Clicking anywhere on the slots box focuses the hidden keyboard input
+        els.slotsWrapper.addEventListener('click', focusTypingInput);
+
+        // Typing updates visual letters above underscores
+        els.hiddenInput.addEventListener('input', syncInputToSlots);
+        els.hiddenInput.addEventListener('focus', syncInputToSlots);
+        els.hiddenInput.addEventListener('blur', syncInputToSlots);
+
+        // Desktop Enter key support (checks answer, or moves to next question if resolved)
+        els.hiddenInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                if (!state.isQuestionResolved) {
+                    handleCheckAnswer();
+                } else {
+                    goToNextQuestion();
+                }
+            }
+        });
+
+        // Global Enter key fallback when focus isn't inside the hidden input
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !els.quizScreen.classList.contains('hidden')) {
+                if (document.activeElement !== els.hiddenInput) {
+                    e.preventDefault();
+                    if (!state.isQuestionResolved) {
+                        handleCheckAnswer();
+                    } else {
+                        goToNextQuestion();
+                    }
+                }
+            }
+        });
+
+        els.checkBtn.addEventListener('click', handleCheckAnswer);
+
+        function goToNextQuestion() {
+            if (state.currentIndex < state.questions.length - 1) {
+                loadQuestion(state.currentIndex + 1);
+            } else {
+                showResultsScreen();
+            }
+        }
+
+        els.nextBtn.addEventListener('click', goToNextQuestion);
+    </script>
+</body>
+</html>
