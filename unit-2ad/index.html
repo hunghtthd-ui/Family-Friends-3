@@ -1,0 +1,866 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sentence Builder - English Listening & Ordering</title>
+    <!-- Tailwind CSS for responsive, modern styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Nunito for friendly, clear educational typography -->
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Tone.js for crisp, pleasant Web Audio sound effects without external files -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <style>
+        body {
+            font-family: 'Nunito', sans-serif;
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+            min-height: 100vh;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* Smooth pop animation for word tiles */
+        @keyframes popIn {
+            0% { transform: scale(0.85); opacity: 0; }
+            70% { transform: scale(1.04); opacity: 1; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .word-tile {
+            animation: popIn 0.22s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+            transition: transform 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+        }
+
+        .word-tile:active {
+            transform: scale(0.95);
+        }
+
+        /* Shake animation on wrong answer */
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-8px); }
+            40%, 80% { transform: translateX(8px); }
+        }
+
+        .shake-box {
+            animation: shake 0.4s ease-in-out;
+        }
+
+        /* Pulse animation for active speaker button */
+        @keyframes soundPulse {
+            0% { box-shadow: 0 0 0 0 rgba(14, 165, 233, 0.5); }
+            70% { box-shadow: 0 0 0 14px rgba(14, 165, 233, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(14, 165, 233, 0); }
+        }
+
+        .speaking-pulse {
+            animation: soundPulse 1.3s infinite;
+        }
+    </style>
+</head>
+<body class="text-slate-800 flex flex-col items-center justify-center p-3 sm:p-6">
+
+    <!-- Main Application Card -->
+    <main class="w-full max-w-3xl bg-white rounded-3xl shadow-xl border border-sky-100 overflow-hidden transition-all">
+        
+        <!-- Top Header & Progress Bar -->
+        <header class="bg-sky-600 text-white px-5 py-4 sm:px-8 sm:py-5 flex flex-col gap-3">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2.5">
+                    <span class="bg-white/20 p-2 rounded-xl">
+                        <!-- Book / Audio Icon -->
+                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"/>
+                        </svg>
+                    </span>
+                    <div>
+                        <h1 class="text-lg sm:text-xl font-extrabold tracking-tight">Listen & Order</h1>
+                        <p class="text-sky-100 text-xs sm:text-sm font-medium">Build the sentence you hear</p>
+                    </div>
+                </div>
+                <div id="question-counter" class="hidden bg-sky-700/80 px-3.5 py-1.5 rounded-full text-xs sm:text-sm font-bold tracking-wide">
+                    Question 1 / 11
+                </div>
+            </div>
+
+            <!-- Visual Progress Track -->
+            <div id="progress-wrapper" class="hidden w-full bg-sky-800/50 h-2.5 rounded-full overflow-hidden">
+                <div id="progress-bar" class="bg-amber-400 h-full rounded-full transition-all duration-300" style="width: 0%;"></div>
+            </div>
+        </header>
+
+        <!-- SCREEN 1: Welcome / Start Screen (Required to unlock browser Autoplay Audio & Speech APIs cleanly) -->
+        <section id="start-screen" class="p-6 sm:p-12 text-center flex flex-col items-center">
+            <div class="w-20 h-20 bg-sky-100 text-sky-600 rounded-3xl flex items-center justify-center mb-5 shadow-inner">
+                <svg class="w-11 h-11" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"/>
+                </svg>
+            </div>
+            <h2 class="text-2xl sm:text-3xl font-extrabold text-slate-800 mb-3">Ready to Practice?</h2>
+            <p class="text-slate-600 max-w-md text-sm sm:text-base mb-6 leading-relaxed">
+                Listen carefully to each sentence and arrange the scrambled words into the empty slots in the exact order.
+            </p>
+
+            <div class="bg-amber-50 border border-amber-200 rounded-2xl p-4 mb-7 max-w-md w-full text-left text-xs sm:text-sm text-amber-900 space-y-1.5">
+                <p class="font-bold flex items-center gap-1.5">
+                    <span>📌</span> Quick Rules:
+                </p>
+                <ul class="list-disc list-inside space-y-1 text-amber-800">
+                    <li>Tap words to move them into the blank slots (or tap a placed word to remove it).</li>
+                    <li>You have up to <strong>3 attempts</strong> per sentence.</li>
+                    <li>Any mistake marks that question as incorrect in the final score, so listen closely!</li>
+                    <li>On a computer, press <kbd class="px-1.5 py-0.5 bg-white border border-amber-300 rounded font-mono text-xs">Enter</kbd> to check your answer.</li>
+                </ul>
+            </div>
+
+            <button id="start-btn" class="w-full sm:w-auto px-8 py-4 bg-sky-600 hover:bg-sky-700 active:bg-sky-800 text-white font-extrabold text-base sm:text-lg rounded-2xl shadow-lg shadow-sky-600/30 transition transform hover:-translate-y-0.5 cursor-pointer flex items-center justify-center gap-2">
+                <span>Start Exercise</span>
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
+                </svg>
+            </button>
+        </section>
+
+        <!-- SCREEN 2: Active Quiz Screen -->
+        <section id="quiz-screen" class="hidden p-5 sm:p-8 flex flex-col gap-6">
+            
+            <!-- Audio Control & Attempt Status Row -->
+            <div class="flex flex-wrap items-center justify-between gap-3 bg-slate-50 border border-slate-200/80 p-3.5 sm:p-4 rounded-2xl">
+                <!-- Listen Again Button -->
+                <button id="listen-btn" type="button" class="flex items-center gap-3 bg-sky-500 hover:bg-sky-600 active:bg-sky-700 text-white font-bold px-4 py-2.5 sm:px-5 sm:py-3 rounded-xl shadow-md shadow-sky-500/20 transition cursor-pointer">
+                    <svg class="w-6 h-6 shrink-0" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"/>
+                    </svg>
+                    <span class="text-sm sm:text-base">Listen Sentence</span>
+                </button>
+
+                <!-- Remaining Attempts Indicator -->
+                <div class="flex items-center gap-2">
+                    <span class="text-xs sm:text-sm font-bold text-slate-500">Attempts left:</span>
+                    <div id="attempts-dots" class="flex items-center gap-1.5" aria-label="Remaining attempts">
+                        <!-- Populated dynamically -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Answer Slots Container (Number of slots matches exact word count) -->
+            <div>
+                <div class="flex items-center justify-between mb-2">
+                    <label class="text-xs sm:text-sm font-bold uppercase tracking-wider text-slate-400">Your Sentence</label>
+                    <button id="clear-btn" type="button" class="text-xs font-bold text-slate-400 hover:text-rose-500 transition cursor-pointer">
+                        Clear Slots
+                    </button>
+                </div>
+                <div id="answer-slots" class="min-h-[84px] p-3 sm:p-4 bg-sky-50/70 border-2 border-dashed border-sky-200 rounded-2xl flex flex-wrap items-center gap-2.5 transition-all">
+                    <!-- Blank slot placeholders & placed words rendered here -->
+                </div>
+            </div>
+
+            <!-- Feedback Banner (Praise, Try Again, or Correct Answer Reveal) -->
+            <div id="feedback-banner" class="hidden rounded-2xl p-4 border text-center transition-all">
+                <p id="feedback-title" class="text-lg sm:text-xl font-extrabold"></p>
+                <p id="feedback-subtitle" class="text-sm sm:text-base mt-1 font-medium"></p>
+            </div>
+
+            <!-- Scrambled Word Bank Container -->
+            <div>
+                <label class="block text-xs sm:text-sm font-bold uppercase tracking-wider text-slate-400 mb-2">
+                    Tap Words to Arrange
+                </label>
+                <div id="word-bank" class="min-h-[76px] p-3 sm:p-4 bg-slate-50 border border-slate-200 rounded-2xl flex flex-wrap items-center justify-center gap-2.5">
+                    <!-- Shuffled word buttons rendered here -->
+                </div>
+            </div>
+
+            <!-- Action Footer (Check Answer / Next Question) -->
+            <div class="pt-2 flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-slate-100">
+                <p class="text-xs text-slate-400 hidden sm:block">
+                    Tip: Press <kbd class="px-1.5 py-0.5 bg-slate-100 border border-slate-300 rounded font-mono text-slate-600">Enter</kbd> to submit
+                </p>
+
+                <div class="w-full sm:w-auto flex items-center justify-end gap-3">
+                    <button id="check-btn" type="button" disabled class="w-full sm:w-auto px-7 py-3.5 bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-300 disabled:cursor-not-allowed text-white font-extrabold text-base rounded-2xl shadow-md shadow-emerald-600/20 disabled:shadow-none transition cursor-pointer">
+                        Check Answer
+                    </button>
+
+                    <button id="next-btn" type="button" class="hidden w-full sm:w-auto px-7 py-3.5 bg-sky-600 hover:bg-sky-700 text-white font-extrabold text-base rounded-2xl shadow-md shadow-sky-600/25 transition cursor-pointer flex items-center justify-center gap-2">
+                        <span id="next-btn-text">Next Question</span>
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- SCREEN 3: Final Summary & Detailed Question Breakdown -->
+        <section id="summary-screen" class="hidden p-5 sm:p-8 flex flex-col gap-6">
+            <div class="text-center">
+                <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-amber-100 text-amber-500 mb-3">
+                    <svg class="w-9 h-9" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                    </svg>
+                </div>
+                <h2 class="text-2xl sm:text-3xl font-extrabold text-slate-800">Exercise Complete!</h2>
+                <p class="text-slate-500 text-sm sm:text-base mt-1">Here is your detailed performance report</p>
+            </div>
+
+            <!-- Score Summary Cards -->
+            <div class="grid grid-cols-3 gap-3 sm:gap-4">
+                <div class="bg-slate-50 border border-slate-200 rounded-2xl p-3.5 sm:p-4 text-center">
+                    <span class="block text-xs font-bold uppercase text-slate-400">Total</span>
+                    <span id="stat-total" class="text-2xl sm:text-3xl font-extrabold text-slate-800 mt-1 block">11</span>
+                </div>
+                <div class="bg-emerald-50 border border-emerald-200 rounded-2xl p-3.5 sm:p-4 text-center">
+                    <span class="block text-xs font-bold uppercase text-emerald-600">Correct</span>
+                    <span id="stat-correct" class="text-2xl sm:text-3xl font-extrabold text-emerald-600 mt-1 block">0</span>
+                </div>
+                <div class="bg-rose-50 border border-rose-200 rounded-2xl p-3.5 sm:p-4 text-center">
+                    <span class="block text-xs font-bold uppercase text-rose-600">Incorrect</span>
+                    <span id="stat-wrong" class="text-2xl sm:text-3xl font-extrabold text-rose-600 mt-1 block">0</span>
+                </div>
+            </div>
+
+            <!-- Exact Question-by-Question Breakdown -->
+            <div>
+                <h3 class="text-sm font-extrabold uppercase tracking-wider text-slate-500 mb-3">Question Breakdown</h3>
+                <div id="breakdown-list" class="space-y-2.5 max-h-[340px] overflow-y-auto pr-1">
+                    <!-- Dynamically populated rows -->
+                </div>
+            </div>
+
+            <!-- Restart Button -->
+            <div class="pt-2 flex justify-center">
+                <button id="restart-btn" type="button" class="w-full sm:w-auto px-8 py-4 bg-sky-600 hover:bg-sky-700 text-white font-extrabold text-base rounded-2xl shadow-lg shadow-sky-600/25 transition cursor-pointer flex items-center justify-center gap-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.4" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                    </svg>
+                    <span>Practice Again</span>
+                </button>
+            </div>
+        </section>
+
+    </main>
+
+    <script>
+        /**
+         * Sentence Builder Application Logic
+         * Strictly adheres to question order, 3-attempt limit, first-mistake scoring rule,
+         * slow female TTS voice, sound effects via Tone.js, and keyboard/mobile accessibility.
+         */
+
+        // 1. Exact ordered list of sentences specified by user
+        const SENTENCES = [
+            "I've got lots of fish! Come on, Max!",
+            "I don't like fishing. I like reading.",
+            "Fishing is easy. You can read your book, too.",
+            "OK.",
+            "I've got a fish!",
+            "Wow! It's a big fish!",
+            "Help!",
+            "Take a photo, Amy!",
+            "That's a great fish, Max! We can have it for lunch!",
+            "It's time to go home, Max.",
+            "Let's stay! I like fishing!"
+        ];
+
+        // Random praise phrases for correct answers
+        const PRAISE_MESSAGES = ["Well done", "Good job", "Excellent", "Very good"];
+        const MAX_ATTEMPTS = 3;
+
+        // Application State
+        let currentIndex = 0;
+        let attemptsUsed = 0;
+        let hasMadeMistakeOnCurrent = false; // If true at any point, question counts as wrong in final stats
+        let isQuestionResolved = false;      // True once answered correctly OR 3 attempts exhausted
+        let targetWords = [];                // Ordered array of words for current sentence
+        let bankItems = [];                  // Array of objects: { id, text, placed }
+        let slotItems = [];                  // Array of length targetWords.length containing bankItem or null
+        let resultsHistory = [];             // Stores { index, sentence, isCorrect, attempts }
+        let preferredFemaleVoice = null;
+
+        // DOM Elements
+        const startScreen = document.getElementById('start-screen');
+        const quizScreen = document.getElementById('quiz-screen');
+        const summaryScreen = document.getElementById('summary-screen');
+        const questionCounter = document.getElementById('question-counter');
+        const progressWrapper = document.getElementById('progress-wrapper');
+        const progressBar = document.getElementById('progress-bar');
+
+        const startBtn = document.getElementById('start-btn');
+        const listenBtn = document.getElementById('listen-btn');
+        const attemptsDots = document.getElementById('attempts-dots');
+        const answerSlotsEl = document.getElementById('answer-slots');
+        const wordBankEl = document.getElementById('word-bank');
+        const clearBtn = document.getElementById('clear-btn');
+        const checkBtn = document.getElementById('check-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const nextBtnText = document.getElementById('next-btn-text');
+        const feedbackBanner = document.getElementById('feedback-banner');
+        const feedbackTitle = document.getElementById('feedback-title');
+        const feedbackSubtitle = document.getElementById('feedback-subtitle');
+
+        const statTotal = document.getElementById('stat-total');
+        const statCorrect = document.getElementById('stat-correct');
+        const statWrong = document.getElementById('stat-wrong');
+        const breakdownList = document.getElementById('breakdown-list');
+        const restartBtn = document.getElementById('restart-btn');
+
+        // ==========================================
+        // AUDIO & SPEECH SYNTHESIS MODULE
+        // ==========================================
+
+        /**
+         * Selects the clearest female English voice available on the user's device.
+         */
+        function loadFemaleVoice() {
+            if (!('speechSynthesis' in window)) return;
+            const voices = window.speechSynthesis.getVoices();
+            if (!voices.length) return;
+
+            // Priority keywords for natural female English voices across Windows, macOS, iOS, Android, Chrome
+            const femaleKeywords = [
+                'zira', 'samantha', 'victoria', 'karen', 'moira', 'tessa',
+                'aria', 'jenny', 'emma', 'ava', 'susan', 'female', 'woman', 'google us english'
+            ];
+
+            const englishVoices = voices.filter(v => v.lang && v.lang.toLowerCase().startsWith('en'));
+
+            // Find best matching female English voice
+            for (const kw of femaleKeywords) {
+                const match = englishVoices.find(v => v.name.toLowerCase().includes(kw));
+                if (match) {
+                    preferredFemaleVoice = match;
+                    return;
+                }
+            }
+
+            // Fallback to first English voice
+            if (englishVoices.length > 0) {
+                preferredFemaleVoice = englishVoices[0];
+            }
+        }
+
+        if ('speechSynthesis' in window) {
+            loadFemaleVoice();
+            window.speechSynthesis.onvoiceschanged = loadFemaleVoice;
+        }
+
+        /**
+         * Speaks text slowly and clearly using a female voice.
+         * @param {string} text - Text to speak (sentence or individual word).
+         * @param {boolean} isFullSentence - Adds visual pulse to Listen button when true.
+         */
+        function speakText(text, isFullSentence = true) {
+            if (!('speechSynthesis' in window)) return;
+            try {
+                window.speechSynthesis.cancel();
+                const utterance = new SpeechSynthesisUtterance(text);
+                if (!preferredFemaleVoice) loadFemaleVoice();
+                if (preferredFemaleVoice) {
+                    utterance.voice = preferredFemaleVoice;
+                }
+                utterance.lang = 'en-US';
+                utterance.rate = 0.78;  // Slow and clear for learners
+                utterance.pitch = 1.08; // Slightly higher pitch for clear female clarity
+
+                if (isFullSentence) {
+                    utterance.onstart = () => listenBtn.classList.add('speaking-pulse');
+                    utterance.onend = () => listenBtn.classList.remove('speaking-pulse');
+                    utterance.onerror = () => listenBtn.classList.remove('speaking-pulse');
+                }
+
+                window.speechSynthesis.speak(utterance);
+            } catch (err) {
+                console.warn('Speech synthesis unavailable:', err);
+            }
+        }
+
+        /**
+         * Plays celebratory chime via Tone.js when answer is correct.
+         */
+        async function playSuccessSound() {
+            try {
+                await Tone.start();
+                const synth = new Tone.PolySynth(Tone.Synth, {
+                    oscillator: { type: 'triangle' },
+                    envelope: { attack: 0.02, decay: 0.2, sustain: 0.2, release: 0.5 }
+                }).toDestination();
+                const now = Tone.now();
+                synth.triggerAttackRelease('C5', '16n', now);
+                synth.triggerAttackRelease('E5', '16n', now + 0.1);
+                synth.triggerAttackRelease('G5', '16n', now + 0.2);
+                synth.triggerAttackRelease('C6', '8n', now + 0.3);
+            } catch (e) {
+                console.warn('Audio cue error:', e);
+            }
+        }
+
+        /**
+         * Plays gentle error tone via Tone.js when answer is incorrect.
+         */
+        async function playErrorSound() {
+            try {
+                await Tone.start();
+                const synth = new Tone.Synth({
+                    oscillator: { type: 'sawtooth' },
+                    volume: -8,
+                    envelope: { attack: 0.01, decay: 0.25, sustain: 0.05, release: 0.2 }
+                }).toDestination();
+                const now = Tone.now();
+                synth.triggerAttackRelease('E3', '16n', now);
+                synth.triggerAttackRelease('C3', '8n', now + 0.14);
+            } catch (e) {
+                console.warn('Audio cue error:', e);
+            }
+        }
+
+        /**
+         * Subtle click pop when tapping a word tile.
+         */
+        async function playTapSound() {
+            try {
+                if (Tone.context.state !== 'running') await Tone.start();
+                const synth = new Tone.MembraneSynth({
+                    volume: -16,
+                    octaves: 2,
+                    pitchDecay: 0.02
+                }).toDestination();
+                synth.triggerAttackRelease('G4', '32n');
+            } catch (e) {
+                // Ignore if audio context not yet interacted
+            }
+        }
+
+        // ==========================================
+        // HELPER FUNCTIONS
+        // ==========================================
+
+        /**
+         * Fisher-Yates shuffle ensuring scrambled words are actually shuffled when > 1 word.
+         */
+        function shuffleWords(wordsArray) {
+            const arr = wordsArray.map((word, idx) => ({
+                id: `word-${idx}-${Math.random().toString(36).slice(2, 7)}`,
+                text: word,
+                placed: false
+            }));
+
+            if (arr.length <= 1) return arr;
+
+            let attempts = 0;
+            do {
+                for (let i = arr.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [arr[i], arr[j]] = [arr[j], arr[i]];
+                }
+                attempts++;
+            } while (
+                arr.map(item => item.text).join(' ') === wordsArray.join(' ') &&
+                attempts < 10
+            );
+
+            return arr;
+        }
+
+        // ==========================================
+        // QUIZ RENDERING & INTERACTION LOGIC
+        // ==========================================
+
+        /**
+         * Initializes a specific question by index (0 to SENTENCES.length - 1).
+         */
+        function loadQuestion(index) {
+            currentIndex = index;
+            attemptsUsed = 0;
+            hasMadeMistakeOnCurrent = false;
+            isQuestionResolved = false;
+
+            const currentSentence = SENTENCES[currentIndex];
+            // Split sentence into words separated by whitespace
+            targetWords = currentSentence.trim().split(/\s+/);
+            bankItems = shuffleWords(targetWords);
+            slotItems = new Array(targetWords.length).fill(null);
+
+            // Update Header & Progress
+            questionCounter.textContent = `Question ${currentIndex + 1} / ${SENTENCES.length}`;
+            const progressPercent = (currentIndex / SENTENCES.length) * 100;
+            progressBar.style.width = `${progressPercent}%`;
+
+            // Reset UI Controls
+            hideFeedback();
+            checkBtn.classList.remove('hidden');
+            checkBtn.disabled = true;
+            nextBtn.classList.add('hidden');
+            clearBtn.classList.remove('hidden');
+
+            renderAttemptsDots();
+            renderBoard();
+
+            // Automatically speak the new sentence after a brief visual settle delay
+            setTimeout(() => {
+                speakText(currentSentence, true);
+            }, 350);
+        }
+
+        /**
+         * Renders the 3 attempt indicator dots.
+         */
+        function renderAttemptsDots() {
+            attemptsDots.innerHTML = '';
+            const remaining = MAX_ATTEMPTS - attemptsUsed;
+            for (let i = 0; i < MAX_ATTEMPTS; i++) {
+                const dot = document.createElement('span');
+                const isActive = i < remaining;
+                dot.className = `w-3.5 h-3.5 rounded-full transition-all ${
+                    isActive
+                        ? 'bg-emerald-500 shadow-sm shadow-emerald-500/40 scale-100'
+                        : 'bg-rose-200 scale-90'
+                }`;
+                attemptsDots.appendChild(dot);
+            }
+        }
+
+        /**
+         * Renders both the Answer Slots and the Scrambled Word Bank.
+         */
+        function renderBoard() {
+            // 1. Render Answer Slots (Exact number of blank spaces = targetWords.length)
+            answerSlotsEl.innerHTML = '';
+            slotItems.forEach((item, slotIdx) => {
+                if (item) {
+                    const placedBtn = document.createElement('button');
+                    placedBtn.type = 'button';
+                    placedBtn.textContent = item.text;
+                    placedBtn.className = `word-tile px-3.5 py-2.5 sm:px-4 sm:py-2.5 rounded-xl font-bold text-base sm:text-lg shadow-sm border-2 transition cursor-pointer ${
+                        isQuestionResolved
+                            ? 'bg-emerald-100 border-emerald-400 text-emerald-900 cursor-default'
+                            : 'bg-sky-600 border-sky-700 text-white hover:bg-sky-700'
+                    }`;
+                    if (!isQuestionResolved) {
+                        placedBtn.title = 'Click to remove word';
+                        placedBtn.addEventListener('click', () => removeWordFromSlot(slotIdx));
+                    }
+                    answerSlotsEl.appendChild(placedBtn);
+                } else {
+                    const emptySlot = document.createElement('div');
+                    emptySlot.className = 'min-w-[68px] sm:min-w-[82px] h-[44px] sm:h-[46px] rounded-xl border-2 border-dashed border-sky-300 bg-white/80 flex items-center justify-center text-xs font-bold text-sky-300';
+                    emptySlot.textContent = `${slotIdx + 1}`;
+                    answerSlotsEl.appendChild(emptySlot);
+                }
+            });
+
+            // 2. Render Scrambled Word Bank
+            wordBankEl.innerHTML = '';
+            bankItems.forEach((item) => {
+                const bankBtn = document.createElement('button');
+                bankBtn.type = 'button';
+                bankBtn.textContent = item.text;
+
+                if (item.placed || isQuestionResolved) {
+                    // Ghost placeholder so remaining tiles don't jump awkwardly
+                    bankBtn.disabled = true;
+                    bankBtn.className = 'px-3.5 py-2.5 sm:px-4 sm:py-2.5 rounded-xl font-bold text-base sm:text-lg border-2 border-slate-200 bg-slate-100 text-slate-300 cursor-default';
+                } else {
+                    bankBtn.className = 'word-tile px-3.5 py-2.5 sm:px-4 sm:py-2.5 rounded-xl font-bold text-base sm:text-lg bg-white border-2 border-slate-300 text-slate-800 hover:border-sky-500 hover:text-sky-700 hover:shadow-md shadow-sm cursor-pointer';
+                    bankBtn.addEventListener('click', () => placeWordInNextSlot(item.id));
+                }
+                wordBankEl.appendChild(bankBtn);
+            });
+
+            // Enable Check button only when all blank slots are filled and question isn't resolved
+            const allSlotsFilled = slotItems.every(slot => slot !== null);
+            checkBtn.disabled = !allSlotsFilled || isQuestionResolved;
+        }
+
+        /**
+         * Places a clicked word from the bank into the first available empty slot.
+         */
+        function placeWordInNextSlot(itemId) {
+            if (isQuestionResolved) return;
+            const nextEmptyIndex = slotItems.findIndex(slot => slot === null);
+            if (nextEmptyIndex === -1) return;
+
+            const bankItem = bankItems.find(item => item.id === itemId);
+            if (!bankItem || bankItem.placed) return;
+
+            bankItem.placed = true;
+            slotItems[nextEmptyIndex] = bankItem;
+
+            playTapSound();
+            // Speak the individual word softly when clicked so learners hear each word clearly
+            speakText(bankItem.text, false);
+            renderBoard();
+        }
+
+        /**
+         * Returns a placed word back to the word bank.
+         */
+        function removeWordFromSlot(slotIdx) {
+            if (isQuestionResolved) return;
+            const item = slotItems[slotIdx];
+            if (!item) return;
+
+            item.placed = false;
+            slotItems[slotIdx] = null;
+
+            playTapSound();
+            renderBoard();
+        }
+
+        /**
+         * Clears all currently placed words in the active question.
+         */
+        function clearAllSlots() {
+            if (isQuestionResolved) return;
+            slotItems.forEach((item, idx) => {
+                if (item) {
+                    item.placed = false;
+                    slotItems[idx] = null;
+                }
+            });
+            playTapSound();
+            renderBoard();
+        }
+
+        /**
+         * Displays feedback message banner.
+         */
+        function showFeedback(type, title, subtitle = '') {
+            feedbackBanner.classList.remove(
+                'hidden',
+                'bg-emerald-50', 'border-emerald-200', 'text-emerald-800',
+                'bg-rose-50', 'border-rose-200', 'text-rose-800',
+                'bg-amber-50', 'border-amber-200', 'text-amber-900'
+            );
+
+            if (type === 'success') {
+                feedbackBanner.classList.add('bg-emerald-50', 'border-emerald-200', 'text-emerald-800');
+            } else if (type === 'error') {
+                feedbackBanner.classList.add('bg-rose-50', 'border-rose-200', 'text-rose-800');
+            } else {
+                feedbackBanner.classList.add('bg-amber-50', 'border-amber-200', 'text-amber-900');
+            }
+
+            feedbackTitle.textContent = title;
+            feedbackSubtitle.textContent = subtitle;
+            feedbackSubtitle.classList.toggle('hidden', !subtitle);
+        }
+
+        function hideFeedback() {
+            feedbackBanner.classList.add('hidden');
+        }
+
+        /**
+         * Validates the student's arranged sentence against the target sentence.
+         */
+        function checkAnswer() {
+            if (isQuestionResolved) return;
+            if (slotItems.some(slot => slot === null)) return;
+
+            const userSentence = slotItems.map(item => item.text).join(' ');
+            const correctSentence = targetWords.join(' ');
+
+            if (userSentence === correctSentence) {
+                // CORRECT ANSWER
+                isQuestionResolved = true;
+                playSuccessSound();
+
+                // Pick random praise phrase
+                const praise = PRAISE_MESSAGES[Math.floor(Math.random() * PRAISE_MESSAGES.length)];
+                showFeedback('success', `🎉 ${praise}!`, `"${correctSentence}"`);
+
+                // Record result: Only counts as correct if 0 mistakes were made on this question
+                resultsHistory.push({
+                    questionNumber: currentIndex + 1,
+                    sentence: correctSentence,
+                    isCorrect: !hasMadeMistakeOnCurrent
+                });
+
+                finalizeQuestionControls();
+            } else {
+                // WRONG ANSWER
+                attemptsUsed++;
+                hasMadeMistakeOnCurrent = true; // Rule: Even 1 mistake marks the whole question wrong in stats
+                playErrorSound();
+                renderAttemptsDots();
+
+                // Trigger visual shake on slots
+                answerSlotsEl.classList.remove('shake-box');
+                void answerSlotsEl.offsetWidth; // Force reflow
+                answerSlotsEl.classList.add('shake-box');
+
+                if (attemptsUsed >= MAX_ATTEMPTS) {
+                    // Exhausted all 3 attempts -> Show correct answer & allow moving on
+                    isQuestionResolved = true;
+
+                    // Fill slots with the exact correct answer so student clearly sees it
+                    slotItems = targetWords.map((wordText, i) => ({
+                        id: `revealed-${i}`,
+                        text: wordText,
+                        placed: true
+                    }));
+
+                    showFeedback(
+                        'reveal',
+                        'Out of attempts! Here is the correct sentence:',
+                        `"${correctSentence}"`
+                    );
+
+                    // Speak the correct sentence so student hears it properly
+                    setTimeout(() => speakText(correctSentence, true), 450);
+
+                    resultsHistory.push({
+                        questionNumber: currentIndex + 1,
+                        sentence: correctSentence,
+                        isCorrect: false
+                    });
+
+                    finalizeQuestionControls();
+                } else {
+                    // Still has attempts left -> Reset current question slots & re-scramble words
+                    const remaining = MAX_ATTEMPTS - attemptsUsed;
+                    showFeedback(
+                        'error',
+                        'Not quite right! Try again.',
+                        `You have ${remaining} ${remaining === 1 ? 'attempt' : 'attempts'} remaining.`
+                    );
+
+                    // Reset slots & re-shuffle word bank after short delay so student sees shake
+                    setTimeout(() => {
+                        if (!isQuestionResolved) {
+                            bankItems = shuffleWords(targetWords);
+                            slotItems = new Array(targetWords.length).fill(null);
+                            renderBoard();
+                        }
+                    }, 500);
+                }
+            }
+        }
+
+        /**
+         * Updates buttons once a question is either solved or revealed after 3 failures.
+         */
+        function finalizeQuestionControls() {
+            checkBtn.classList.add('hidden');
+            clearBtn.classList.add('hidden');
+            nextBtn.classList.remove('hidden');
+
+            if (currentIndex === SENTENCES.length - 1) {
+                nextBtnText.textContent = 'View Final Results';
+            } else {
+                nextBtnText.textContent = 'Next Question';
+            }
+
+            renderBoard();
+        }
+
+        /**
+         * Advances to the next question or displays the final summary screen.
+         */
+        function goToNext() {
+            if (currentIndex + 1 < SENTENCES.length) {
+                loadQuestion(currentIndex + 1);
+            } else {
+                showFinalSummary();
+            }
+        }
+
+        /**
+         * Renders the final statistics and exact per-question breakdown.
+         */
+        function showFinalSummary() {
+            window.speechSynthesis && window.speechSynthesis.cancel();
+            quizScreen.classList.add('hidden');
+            questionCounter.classList.add('hidden');
+            progressBar.style.width = '100%';
+            summaryScreen.classList.remove('hidden');
+
+            const total = SENTENCES.length;
+            const correctCount = resultsHistory.filter(r => r.isCorrect).length;
+            const wrongCount = total - correctCount;
+
+            statTotal.textContent = total;
+            statCorrect.textContent = correctCount;
+            statWrong.textContent = wrongCount;
+
+            breakdownList.innerHTML = '';
+            resultsHistory.forEach((item) => {
+                const row = document.createElement('div');
+                row.className = `flex items-center justify-between gap-3 p-3.5 rounded-2xl border ${
+                    item.isCorrect
+                        ? 'bg-emerald-50/70 border-emerald-200'
+                        : 'bg-rose-50/70 border-rose-200'
+                }`;
+
+                row.innerHTML = `
+                    <div class="flex items-start gap-3 min-w-0">
+                        <span class="shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-xs font-extrabold ${
+                            item.isCorrect
+                                ? 'bg-emerald-500 text-white'
+                                : 'bg-rose-500 text-white'
+                        }">
+                            ${item.questionNumber}
+                        </span>
+                        <p class="text-sm sm:text-base font-bold text-slate-800 break-words leading-snug">
+                            ${item.sentence}
+                        </p>
+                    </div>
+                    <span class="shrink-0 px-2.5 py-1 rounded-lg text-xs font-extrabold uppercase tracking-wide ${
+                        item.isCorrect
+                            ? 'bg-emerald-100 text-emerald-700'
+                            : 'bg-rose-100 text-rose-700'
+                    }">
+                        ${item.isCorrect ? '✓ Correct' : '✕ Wrong'}
+                    </span>
+                `;
+                breakdownList.appendChild(row);
+            });
+        }
+
+        /**
+         * Starts or restarts the entire exercise from Question 1.
+         */
+        function startExercise() {
+            resultsHistory = [];
+            startScreen.classList.add('hidden');
+            summaryScreen.classList.add('hidden');
+            quizScreen.classList.remove('hidden');
+            questionCounter.classList.remove('hidden');
+            progressWrapper.classList.remove('hidden');
+            loadQuestion(0);
+        }
+
+        // ==========================================
+        // EVENT LISTENERS (Click, Touch, Keyboard)
+        // ==========================================
+
+        startBtn.addEventListener('click', startExercise);
+        restartBtn.addEventListener('click', startExercise);
+
+        listenBtn.addEventListener('click', () => {
+            speakText(SENTENCES[currentIndex], true);
+        });
+
+        clearBtn.addEventListener('click', clearAllSlots);
+        checkBtn.addEventListener('click', checkAnswer);
+        nextBtn.addEventListener('click', goToNext);
+
+        // Desktop Keyboard Support: Press Enter to check answer (or advance if already resolved)
+        document.addEventListener('keydown', (event) => {
+            if (quizScreen.classList.contains('hidden')) return;
+
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                if (!isQuestionResolved) {
+                    if (!checkBtn.disabled) {
+                        checkAnswer();
+                    }
+                } else if (!nextBtn.classList.contains('hidden')) {
+                    goToNext();
+                }
+            }
+        });
+    </script>
+</body>
+</html>
