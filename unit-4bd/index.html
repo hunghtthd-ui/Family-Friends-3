@@ -1,0 +1,990 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sentence Builder - English Practice</title>
+    <!-- Load Tailwind CSS for responsive, modern styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Load Google Fonts: Inter & Fredoka for friendly, legible typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Load Tone.js for synthesized sound effects (no external audio URLs required) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <!-- Load Canvas Confetti for celebratory visual feedback -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <!-- Load FontAwesome for crisp icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 50%, #ede9fe 100%);
+            min-height: 100vh;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        h1, h2, .font-display {
+            font-family: 'Fredoka', sans-serif;
+        }
+
+        /* Animations for interactive feedback */
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-8px); }
+            40%, 80% { transform: translateX(8px); }
+        }
+
+        @keyframes popIn {
+            0% { transform: scale(0.85); opacity: 0; }
+            70% { transform: scale(1.05); opacity: 1; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        @keyframes pulseGlow {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4); }
+            50% { box-shadow: 0 0 0 10px rgba(59, 130, 246, 0); }
+        }
+
+        .animate-shake {
+            animation: shake 0.45s cubic-bezier(.36,.07,.19,.97) both;
+        }
+
+        .animate-pop {
+            animation: popIn 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+
+        .speaking-pulse {
+            animation: pulseGlow 1.5s infinite;
+        }
+
+        /* Custom button 3D tactile effect */
+        .btn-3d {
+            transition: all 0.12s ease;
+            border-bottom-width: 4px;
+        }
+        .btn-3d:active:not(:disabled) {
+            transform: translateY(2px);
+            border-bottom-width: 2px;
+        }
+
+        /* Word slot styling */
+        .word-slot {
+            min-width: 72px;
+            min-height: 46px;
+            transition: all 0.2s ease;
+        }
+
+        /* Word chip styling */
+        .word-chip {
+            transition: all 0.15s ease;
+            border-bottom-width: 3px;
+        }
+        .word-chip:active:not(:disabled) {
+            transform: translateY(2px);
+            border-bottom-width: 1px;
+        }
+    </style>
+</head>
+<body class="flex flex-col items-center justify-center p-3 sm:p-6 text-slate-800">
+
+    <!-- Main Application Container -->
+    <main class="w-full max-w-3xl bg-white/95 backdrop-blur-md rounded-3xl shadow-xl border border-white/60 overflow-hidden transition-all duration-300">
+        
+        <!-- Header Bar -->
+        <header class="bg-gradient-to-r from-indigo-600 via-blue-600 to-sky-500 p-4 sm:p-6 text-white flex flex-wrap items-center justify-between gap-3">
+            <div class="flex items-center gap-3">
+                <div class="w-11 h-11 bg-white/20 rounded-2xl flex items-center justify-center text-2xl shadow-inner">
+                    <i class="fa-solid fa-puzzle-piece"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl sm:text-2xl font-bold tracking-wide">Sentence Builder</h1>
+                    <p class="text-xs sm:text-sm text-blue-100 font-medium">Listen & arrange the words in order</p>
+                </div>
+            </div>
+
+            <!-- Live Progress Badge (Visible during Quiz) -->
+            <div id="header-progress-badge" class="hidden items-center gap-3 bg-white/15 backdrop-blur-sm px-4 py-2 rounded-2xl border border-white/20">
+                <span class="text-xs sm:text-sm font-semibold uppercase tracking-wider text-blue-100">Question</span>
+                <span id="question-counter" class="text-base sm:text-lg font-bold bg-white text-indigo-700 px-2.5 py-0.5 rounded-xl">1 / 11</span>
+            </div>
+        </header>
+
+        <!-- Progress Bar -->
+        <div id="progress-bar-container" class="hidden w-full bg-slate-100 h-2">
+            <div id="progress-bar-fill" class="bg-gradient-to-r from-emerald-400 to-teal-500 h-full transition-all duration-500 ease-out" style="width: 0%"></div>
+        </div>
+
+        <!-- ==================== SCREEN 1: START / WELCOME SCREEN ==================== -->
+        <section id="start-screen" class="p-6 sm:p-10 text-center flex flex-col items-center">
+            <div class="w-24 h-24 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center text-4xl mb-6 shadow-md border-4 border-indigo-100">
+                <i class="fa-solid fa-headphones-simple"></i>
+            </div>
+            
+            <h2 class="text-2xl sm:text-3xl font-bold text-slate-800 mb-3">Ready to Practice English?</h2>
+            <p class="text-slate-600 max-w-lg mb-8 text-sm sm:text-base leading-relaxed">
+                Listen carefully to each sentence and put the scrambled words into the empty boxes in the correct order.
+            </p>
+
+            <!-- Rules Summary Cards -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 w-full max-w-2xl mb-8 text-left">
+                <div class="bg-blue-50/80 border border-blue-100 p-4 rounded-2xl flex items-start gap-3">
+                    <div class="w-8 h-8 rounded-xl bg-blue-500 text-white flex items-center justify-center shrink-0 mt-0.5">
+                        <i class="fa-solid fa-volume-high text-sm"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-slate-800 text-sm">Listen & Learn</h3>
+                        <p class="text-xs text-slate-600 mt-1">Auto-plays each sentence clearly. Tap the speaker anytime to replay.</p>
+                    </div>
+                </div>
+
+                <div class="bg-amber-50/80 border border-amber-100 p-4 rounded-2xl flex items-start gap-3">
+                    <div class="w-8 h-8 rounded-xl bg-amber-500 text-white flex items-center justify-center shrink-0 mt-0.5">
+                        <i class="fa-solid fa-heart text-sm"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-slate-800 text-sm">3 Attempts</h3>
+                        <p class="text-xs text-slate-600 mt-1">You have 3 tries per sentence. First-try perfection earns a point!</p>
+                    </div>
+                </div>
+
+                <div class="bg-purple-50/80 border border-purple-100 p-4 rounded-2xl flex items-start gap-3">
+                    <div class="w-8 h-8 rounded-xl bg-purple-500 text-white flex items-center justify-center shrink-0 mt-0.5">
+                        <i class="fa-solid fa-keyboard text-sm"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-slate-800 text-sm">Quick Controls</h3>
+                        <p class="text-xs text-slate-600 mt-1">Tap words to fill slots, and press <kbd class="px-1.5 py-0.5 bg-white border rounded text-[11px] font-mono">Enter</kbd> to check!</p>
+                    </div>
+                </div>
+            </div>
+
+            <button id="start-btn" class="btn-3d bg-indigo-600 hover:bg-indigo-700 border-indigo-800 text-white font-bold text-lg px-10 py-4 rounded-2xl shadow-lg flex items-center gap-3 cursor-pointer">
+                <span>Start Exercise</span>
+                <i class="fa-solid fa-arrow-right"></i>
+            </button>
+        </section>
+
+        <!-- ==================== SCREEN 2: QUIZ / EXERCISE SCREEN ==================== -->
+        <section id="quiz-screen" class="hidden p-4 sm:p-8 flex flex-col">
+            
+            <!-- Top Controls: Audio Button & Attempts Indicator -->
+            <div class="flex flex-wrap items-center justify-between gap-4 mb-6 bg-slate-50 p-3.5 sm:p-4 rounded-2xl border border-slate-200/80">
+                
+                <!-- Audio Replay & Individual Word Listen Toggle -->
+                <div class="flex items-center gap-2.5 sm:gap-3">
+                    <button id="listen-sentence-btn" type="button" class="btn-3d bg-sky-500 hover:bg-sky-600 border-sky-700 text-white font-semibold px-4 sm:px-5 py-2.5 rounded-xl flex items-center gap-2.5 shadow-sm cursor-pointer">
+                        <i id="speaker-icon" class="fa-solid fa-volume-high text-lg"></i>
+                        <span class="text-sm sm:text-base">Listen Sentence</span>
+                    </button>
+
+                    <button id="listen-slow-btn" type="button" title="Listen even slower" class="btn-3d bg-white hover:bg-slate-100 border-slate-300 text-slate-700 font-semibold px-3 py-2.5 rounded-xl flex items-center gap-1.5 text-sm shadow-sm cursor-pointer">
+                        <i class="fa-solid fa-gauge-simple-low text-sky-600"></i>
+                        <span class="hidden sm:inline">Slower</span>
+                    </button>
+                </div>
+
+                <!-- Attempts Hearts -->
+                <div class="flex items-center gap-2 bg-white px-3.5 py-2 rounded-xl border border-slate-200 shadow-xs">
+                    <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider mr-1">Tries Left:</span>
+                    <div id="attempts-hearts" class="flex items-center gap-1.5 text-rose-500 text-base">
+                        <i class="fa-solid fa-heart"></i>
+                        <i class="fa-solid fa-heart"></i>
+                        <i class="fa-solid fa-heart"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Instruction Prompt -->
+            <div class="flex items-center justify-between mb-2 px-1">
+                <p class="text-xs sm:text-sm font-semibold text-slate-500 uppercase tracking-wider">
+                    <i class="fa-solid fa-arrow-down-short-wide mr-1 text-indigo-500"></i>
+                    Your Sentence (<span id="slot-count-label">0</span> words):
+                </p>
+                <button id="clear-slots-btn" type="button" class="text-xs font-semibold text-slate-500 hover:text-rose-600 transition-colors flex items-center gap-1 py-1 px-2 rounded-lg hover:bg-rose-50 cursor-pointer">
+                    <i class="fa-solid fa-rotate-left"></i>
+                    <span>Clear All</span>
+                </button>
+            </div>
+
+            <!-- Answer Slots Container (Empty boxes matching word count) -->
+            <div id="answer-slots-container" class="min-h-[116px] bg-indigo-50/50 border-2 border-dashed border-indigo-200 rounded-2xl p-3 sm:p-4 flex flex-wrap items-center justify-center gap-2 sm:gap-2.5 mb-6 transition-all">
+                <!-- Dynamic word slots injected here -->
+            </div>
+
+            <!-- Feedback Banner (Dynamic message box for Praise, Try Again, or Revealed Answer) -->
+            <div id="feedback-banner" class="hidden mb-6 p-4 rounded-2xl border-2 text-center animate-pop">
+                <div id="feedback-title" class="font-display text-xl sm:text-2xl font-bold mb-1"></div>
+                <p id="feedback-subtitle" class="text-sm sm:text-base font-medium"></p>
+            </div>
+
+            <!-- Scrambled Word Bank -->
+            <div class="mb-6">
+                <div class="flex items-center justify-between mb-2.5 px-1">
+                    <p class="text-xs sm:text-sm font-semibold text-slate-500 uppercase tracking-wider">
+                        <i class="fa-solid fa-shuffle mr-1 text-sky-500"></i>
+                        Available Words (Tap to place):
+                    </p>
+                    <label class="inline-flex items-center gap-1.5 text-xs text-slate-500 cursor-pointer select-none">
+                        <input type="checkbox" id="speak-word-toggle" checked class="rounded text-indigo-600 focus:ring-indigo-500 w-3.5 h-3.5">
+                        <span>Pronounce word on tap</span>
+                    </label>
+                </div>
+                
+                <div id="word-bank-container" class="min-h-[84px] bg-slate-100/80 border border-slate-200/90 rounded-2xl p-3 sm:p-4 flex flex-wrap items-center justify-center gap-2 sm:gap-2.5">
+                    <!-- Dynamic scrambled word buttons injected here -->
+                </div>
+            </div>
+
+            <!-- Bottom Action Bar (Check Answer / Next Question) -->
+            <div class="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2 border-t border-slate-100">
+                <p class="text-xs text-slate-400 hidden sm:block">
+                    <i class="fa-regular fa-lightbulb text-amber-400 mr-1"></i>
+                    Tip: Press <kbd class="px-1.5 py-0.5 bg-slate-100 border border-slate-300 rounded text-slate-600 font-mono">Enter</kbd> to check your answer or continue.
+                </p>
+
+                <div class="w-full sm:w-auto flex items-center justify-end gap-3">
+                    <button id="check-answer-btn" type="button" disabled class="w-full sm:w-auto btn-3d bg-emerald-500 hover:bg-emerald-600 disabled:bg-slate-300 disabled:border-slate-400 disabled:cursor-not-allowed border-emerald-700 text-white font-bold text-base sm:text-lg px-8 py-3.5 rounded-2xl shadow-md flex items-center justify-center gap-2 cursor-pointer">
+                        <i class="fa-solid fa-check-circle"></i>
+                        <span>Check Answer</span>
+                    </button>
+
+                    <button id="next-question-btn" type="button" class="hidden w-full sm:w-auto btn-3d bg-indigo-600 hover:bg-indigo-700 border-indigo-800 text-white font-bold text-base sm:text-lg px-8 py-3.5 rounded-2xl shadow-md flex items-center justify-center gap-2 animate-pop cursor-pointer">
+                        <span id="next-btn-text">Next Question</span>
+                        <i class="fa-solid fa-arrow-right"></i>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== SCREEN 3: FINAL RESULTS & STATISTICS SCREEN ==================== -->
+        <section id="results-screen" class="hidden p-6 sm:p-10 flex flex-col items-center">
+            <div id="trophy-badge" class="w-20 h-20 bg-amber-100 text-amber-500 rounded-full flex items-center justify-center text-4xl mb-4 shadow-md border-4 border-amber-200 animate-pop">
+                <i class="fa-solid fa-trophy"></i>
+            </div>
+
+            <h2 class="text-2xl sm:text-3xl font-bold text-slate-800 text-center mb-1">Exercise Complete!</h2>
+            <p id="results-summary-text" class="text-slate-600 text-center text-sm sm:text-base mb-6">Here is how you performed across all 11 sentences.</p>
+
+            <!-- Score Overview Cards -->
+            <div class="grid grid-cols-3 gap-3 sm:gap-4 w-full max-w-xl mb-8">
+                <div class="bg-slate-50 border border-slate-200 p-4 rounded-2xl text-center">
+                    <div class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">Total</div>
+                    <div id="stat-total" class="text-2xl sm:text-3xl font-display font-bold text-slate-800">11</div>
+                </div>
+                <div class="bg-emerald-50 border border-emerald-200 p-4 rounded-2xl text-center">
+                    <div class="text-xs font-bold uppercase tracking-wider text-emerald-600 mb-1">Correct</div>
+                    <div id="stat-correct" class="text-2xl sm:text-3xl font-display font-bold text-emerald-600">0</div>
+                </div>
+                <div class="bg-rose-50 border border-rose-200 p-4 rounded-2xl text-center">
+                    <div class="text-xs font-bold uppercase tracking-wider text-rose-600 mb-1">Incorrect</div>
+                    <div id="stat-incorrect" class="text-2xl sm:text-3xl font-display font-bold text-rose-600">0</div>
+                </div>
+            </div>
+
+            <!-- Detailed Sentence-by-Sentence Breakdown -->
+            <div class="w-full max-w-2xl mb-8">
+                <div class="flex items-center justify-between mb-3 px-1">
+                    <h3 class="font-bold text-slate-700 text-sm sm:text-base flex items-center gap-2">
+                        <i class="fa-solid fa-list-check text-indigo-500"></i>
+                        <span>Detailed Breakdown</span>
+                    </h3>
+                    <span class="text-xs text-slate-400">First-attempt accuracy</span>
+                </div>
+
+                <div id="results-breakdown-list" class="space-y-2.5 max-h-[340px] overflow-y-auto pr-1">
+                    <!-- Dynamic result rows injected here -->
+                </div>
+            </div>
+
+            <!-- Restart Button -->
+            <button id="restart-btn" type="button" class="btn-3d bg-indigo-600 hover:bg-indigo-700 border-indigo-800 text-white font-bold text-lg px-9 py-4 rounded-2xl shadow-lg flex items-center gap-3 cursor-pointer">
+                <i class="fa-solid fa-rotate-right"></i>
+                <span>Practice Again (New Order)</span>
+            </button>
+        </section>
+
+    </main>
+
+    <!-- Footer Note -->
+    <footer class="mt-4 text-center text-xs text-slate-500">
+        Interactive English Grammar & Listening Practice
+    </footer>
+
+    <script>
+        /**
+         * ============================================================================
+         * 1. DATA & CONFIGURATION
+         * ============================================================================
+         */
+        const RAW_SENTENCES = [
+            "I'm reading a comic on the beach.",
+            "I'm not waterskiing. I'm swimming",
+            "He's taking photos of the boats.",
+            "He isn't snorkelling with his cousin.",
+            "She's painting with her sister.",
+            "She isn't playing the piano in her bedroom.",
+            "It isn't sleeping on the bed.",
+            "We aren't shopping with our parents.",
+            "You're cooking dinner in the kitchen",
+            "They're playing basketball in the park.",
+            "They aren't surfing, and they aren't kayaking."
+        ];
+
+        const PRAISE_PHRASES = [
+            "Well done",
+            "Good job",
+            "Excellent",
+            "Very good"
+        ];
+
+        const MAX_ATTEMPTS = 3;
+
+        /**
+         * ============================================================================
+         * 2. APPLICATION STATE & DOM REFERENCES
+         * ============================================================================
+         */
+        let state = {
+            questions: [],              // Shuffled list of question objects for the current session
+            previousOrderSignature: '', // Tracks previous run order so consecutive runs never repeat
+            currentIndex: 0,            // Current question index (0 to 10)
+            selectedWords: [],          // Array of word objects placed in slots (null if empty)
+            bankWords: [],              // Array of word objects currently in the word bank
+            attemptsLeft: MAX_ATTEMPTS, // Remaining attempts for current question (starts at 3)
+            madeMistakeOnCurrent: false,// Tracks if student ever failed on current question
+            isQuestionResolved: false,  // True once answered correctly or all 3 tries exhausted
+            results: [],                // Stores { sentence, isCorrect, attemptsUsed } for final stats
+            femaleVoice: null           // Cached female English SpeechSynthesisVoice
+        };
+
+        const dom = {
+            startScreen: document.getElementById('start-screen'),
+            quizScreen: document.getElementById('quiz-screen'),
+            resultsScreen: document.getElementById('results-screen'),
+            headerProgressBadge: document.getElementById('header-progress-badge'),
+            questionCounter: document.getElementById('question-counter'),
+            progressBarContainer: document.getElementById('progress-bar-container'),
+            progressBarFill: document.getElementById('progress-bar-fill'),
+            startBtn: document.getElementById('start-btn'),
+            listenSentenceBtn: document.getElementById('listen-sentence-btn'),
+            listenSlowBtn: document.getElementById('listen-slow-btn'),
+            speakerIcon: document.getElementById('speaker-icon'),
+            attemptsHearts: document.getElementById('attempts-hearts'),
+            slotCountLabel: document.getElementById('slot-count-label'),
+            clearSlotsBtn: document.getElementById('clear-slots-btn'),
+            answerSlotsContainer: document.getElementById('answer-slots-container'),
+            feedbackBanner: document.getElementById('feedback-banner'),
+            feedbackTitle: document.getElementById('feedback-title'),
+            feedbackSubtitle: document.getElementById('feedback-subtitle'),
+            speakWordToggle: document.getElementById('speak-word-toggle'),
+            wordBankContainer: document.getElementById('word-bank-container'),
+            checkAnswerBtn: document.getElementById('check-answer-btn'),
+            nextQuestionBtn: document.getElementById('next-question-btn'),
+            nextBtnText: document.getElementById('next-btn-text'),
+            resultsSummaryText: document.getElementById('results-summary-text'),
+            statTotal: document.getElementById('stat-total'),
+            statCorrect: document.getElementById('stat-correct'),
+            statIncorrect: document.getElementById('stat-incorrect'),
+            resultsBreakdownList: document.getElementById('results-breakdown-list'),
+            restartBtn: document.getElementById('restart-btn')
+        };
+
+        /**
+         * ============================================================================
+         * 3. TEXT-TO-SPEECH (CLEAR FEMALE VOICE) & SOUND EFFECTS (TONE.JS)
+         * ============================================================================
+         */
+        function loadFemaleEnglishVoice() {
+            if (!('speechSynthesis' in window)) return;
+            const voices = window.speechSynthesis.getVoices();
+            if (!voices.length) return;
+
+            const englishVoices = voices.filter(v => v.lang && v.lang.toLowerCase().startsWith('en'));
+            const femaleKeywords = [
+                'female', 'samantha', 'victoria', 'karen', 'moira', 'tessa',
+                'zira', 'hazel', 'susan', 'aria', 'jenny', 'libby', 'sonia',
+                'google us english', 'google uk english female', 'eva', 'emma', 'amy'
+            ];
+
+            let chosen = englishVoices.find(v => {
+                const nameLower = v.name.toLowerCase();
+                return femaleKeywords.some(kw => nameLower.includes(kw)) && !nameLower.includes('male');
+            });
+
+            if (!chosen) {
+                chosen = englishVoices.find(v => !v.name.toLowerCase().includes('male')) || englishVoices[0];
+            }
+
+            state.femaleVoice = chosen || null;
+        }
+
+        if ('speechSynthesis' in window) {
+            loadFemaleEnglishVoice();
+            window.speechSynthesis.onvoiceschanged = loadFemaleEnglishVoice;
+        }
+
+        function speakText(text, rate = 0.78, animateSpeaker = true) {
+            if (!('speechSynthesis' in window)) return;
+            window.speechSynthesis.cancel();
+
+            if (!state.femaleVoice) {
+                loadFemaleEnglishVoice();
+            }
+
+            const utterance = new SpeechSynthesisUtterance(text);
+            if (state.femaleVoice) {
+                utterance.voice = state.femaleVoice;
+            }
+            utterance.lang = 'en-US';
+            utterance.rate = rate;
+            utterance.pitch = 1.08;
+
+            if (animateSpeaker) {
+                utterance.onstart = () => {
+                    dom.listenSentenceBtn.classList.add('speaking-pulse');
+                };
+                utterance.onend = () => {
+                    dom.listenSentenceBtn.classList.remove('speaking-pulse');
+                };
+                utterance.onerror = () => {
+                    dom.listenSentenceBtn.classList.remove('speaking-pulse');
+                };
+            }
+
+            window.speechSynthesis.speak(utterance);
+        }
+
+        async function playSoundEffect(type) {
+            try {
+                if (typeof Tone === 'undefined') return;
+                if (Tone.context.state !== 'running') {
+                    await Tone.start();
+                }
+
+                const synth = new Tone.PolySynth(Tone.Synth, {
+                    oscillator: { type: 'triangle' },
+                    envelope: { attack: 0.01, decay: 0.15, sustain: 0.05, release: 0.25 }
+                }).toDestination();
+                synth.volume.value = -8;
+
+                const now = Tone.now();
+                if (type === 'success') {
+                    synth.triggerAttackRelease('C5', '16n', now);
+                    synth.triggerAttackRelease('E5', '16n', now + 0.09);
+                    synth.triggerAttackRelease('G5', '16n', now + 0.18);
+                    synth.triggerAttackRelease('C6', '8n', now + 0.27);
+                } else if (type === 'error') {
+                    synth.triggerAttackRelease('E3', '8n', now);
+                    synth.triggerAttackRelease('C3', '4n', now + 0.14);
+                } else if (type === 'pop') {
+                    synth.volume.value = -16;
+                    synth.triggerAttackRelease('G5', '32n', now);
+                }
+            } catch (err) {
+                // Ignore audio errors on restricted environments
+            }
+        }
+
+        /**
+         * ============================================================================
+         * 4. SHUFFLING & NON-REPEATING QUESTION ORDER LOGIC
+         * ============================================================================
+         */
+        function shuffleArray(array) {
+            const arr = [...array];
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+            return arr;
+        }
+
+        function generateNonRepeatingQuestionOrder() {
+            const indexedList = RAW_SENTENCES.map((sentence, idx) => ({
+                originalIndex: idx,
+                sentence: sentence,
+                words: sentence.split(/\s+/).filter(Boolean)
+            }));
+
+            let shuffled = shuffleArray(indexedList);
+            let signature = shuffled.map(item => item.originalIndex).join('-');
+
+            let safetyCounter = 0;
+            while (signature === state.previousOrderSignature && safetyCounter < 15) {
+                shuffled = shuffleArray(indexedList);
+                signature = shuffled.map(item => item.originalIndex).join('-');
+                safetyCounter++;
+            }
+
+            state.previousOrderSignature = signature;
+            return shuffled;
+        }
+
+        function scrambleSentenceWords(words) {
+            const wordObjects = words.map((word, index) => ({
+                id: `w-${index}-${Math.random().toString(36).substring(2, 7)}`,
+                text: word
+            }));
+
+            if (wordObjects.length <= 1) return wordObjects;
+
+            let scrambled = shuffleArray(wordObjects);
+            let attempts = 0;
+            while (scrambled.map(w => w.text).join(' ') === words.join(' ') && attempts < 15) {
+                scrambled = shuffleArray(wordObjects);
+                attempts++;
+            }
+            return scrambled;
+        }
+
+        /**
+         * ============================================================================
+         * 5. QUIZ FLOW & INTERACTIVE BOARD RENDERING
+         * ============================================================================
+         */
+        function startExercise() {
+            state.questions = generateNonRepeatingQuestionOrder();
+            state.currentIndex = 0;
+            state.results = [];
+
+            dom.startScreen.classList.add('hidden');
+            dom.resultsScreen.classList.add('hidden');
+            dom.quizScreen.classList.remove('hidden');
+            dom.headerProgressBadge.classList.remove('hidden');
+            dom.headerProgressBadge.classList.add('flex');
+            dom.progressBarContainer.classList.remove('hidden');
+
+            loadQuestion(0);
+        }
+
+        function loadQuestion(index) {
+            state.currentIndex = index;
+            const currentQ = state.questions[index];
+
+            state.attemptsLeft = MAX_ATTEMPTS;
+            state.madeMistakeOnCurrent = false;
+            state.isQuestionResolved = false;
+            state.selectedWords = new Array(currentQ.words.length).fill(null);
+            state.bankWords = scrambleSentenceWords(currentQ.words);
+
+            dom.questionCounter.textContent = `${index + 1} / ${state.questions.length}`;
+            const progressPct = (index / state.questions.length) * 100;
+            dom.progressBarFill.style.width = `${progressPct}%`;
+            dom.slotCountLabel.textContent = currentQ.words.length;
+
+            hideFeedbackBanner();
+            dom.checkAnswerBtn.classList.remove('hidden');
+            dom.checkAnswerBtn.disabled = true;
+            dom.nextQuestionBtn.classList.add('hidden');
+            dom.clearSlotsBtn.classList.remove('hidden');
+
+            renderAttemptsHearts();
+            renderBoard();
+
+            setTimeout(() => {
+                speakText(currentQ.sentence, 0.78, true);
+            }, 300);
+        }
+
+        function renderAttemptsHearts() {
+            dom.attemptsHearts.innerHTML = '';
+            for (let i = 0; i < MAX_ATTEMPTS; i++) {
+                const heart = document.createElement('i');
+                if (i < state.attemptsLeft) {
+                    heart.className = 'fa-solid fa-heart text-rose-500 transition-transform duration-200';
+                } else {
+                    heart.className = 'fa-regular fa-heart text-slate-300 transition-transform duration-200';
+                }
+                dom.attemptsHearts.appendChild(heart);
+            }
+        }
+
+        function renderBoard() {
+            dom.answerSlotsContainer.innerHTML = '';
+            state.selectedWords.forEach((wordObj, slotIndex) => {
+                const slotEl = document.createElement('button');
+                slotEl.type = 'button';
+
+                if (wordObj) {
+                    slotEl.className = 'word-slot word-chip animate-pop bg-indigo-600 hover:bg-indigo-700 border-indigo-800 text-white font-semibold text-base sm:text-lg px-3.5 py-2 rounded-xl shadow-sm cursor-pointer flex items-center justify-center';
+                    slotEl.textContent = wordObj.text;
+                    slotEl.disabled = state.isQuestionResolved;
+                    if (!state.isQuestionResolved) {
+                        slotEl.title = 'Click to remove word';
+                        slotEl.addEventListener('click', () => removeWordFromSlot(slotIndex));
+                    }
+                } else {
+                    slotEl.className = 'word-slot bg-white/80 border-2 border-dashed border-indigo-300 rounded-xl flex items-center justify-center text-xs font-bold text-indigo-300 cursor-default';
+                    slotEl.textContent = `${slotIndex + 1}`;
+                    slotEl.disabled = true;
+                }
+
+                dom.answerSlotsContainer.appendChild(slotEl);
+            });
+
+            dom.wordBankContainer.innerHTML = '';
+            if (state.bankWords.length === 0 && !state.isQuestionResolved) {
+                const emptyHint = document.createElement('span');
+                emptyHint.className = 'text-xs sm:text-sm text-slate-400 italic';
+                emptyHint.textContent = 'All words placed! Click "Check Answer" or press Enter.';
+                dom.wordBankContainer.appendChild(emptyHint);
+            } else {
+                state.bankWords.forEach((wordObj) => {
+                    const chipBtn = document.createElement('button');
+                    chipBtn.type = 'button';
+                    chipBtn.className = 'word-chip bg-white hover:bg-sky-50 border-slate-300 hover:border-sky-400 text-slate-800 font-semibold text-base sm:text-lg px-4 py-2.5 rounded-xl shadow-xs cursor-pointer';
+                    chipBtn.textContent = wordObj.text;
+                    chipBtn.disabled = state.isQuestionResolved;
+
+                    chipBtn.addEventListener('click', () => selectWordFromBank(wordObj.id));
+                    dom.wordBankContainer.appendChild(chipBtn);
+                });
+            }
+
+            const allSlotsFilled = state.selectedWords.every(w => w !== null);
+            dom.checkAnswerBtn.disabled = !allSlotsFilled || state.isQuestionResolved;
+        }
+
+        function selectWordFromBank(wordId) {
+            if (state.isQuestionResolved) return;
+
+            const bankIndex = state.bankWords.findIndex(w => w.id === wordId);
+            if (bankIndex === -1) return;
+
+            const emptySlotIndex = state.selectedWords.findIndex(s => s === null);
+            if (emptySlotIndex === -1) return;
+
+            const [chosenWord] = state.bankWords.splice(bankIndex, 1);
+            state.selectedWords[emptySlotIndex] = chosenWord;
+
+            playSoundEffect('pop');
+            if (dom.speakWordToggle.checked) {
+                const cleanWord = chosenWord.text.replace(/[.,!?]/g, '');
+                if (cleanWord) speakText(cleanWord, 0.85, false);
+            }
+
+            renderBoard();
+        }
+
+        function removeWordFromSlot(slotIndex) {
+            if (state.isQuestionResolved) return;
+
+            const wordObj = state.selectedWords[slotIndex];
+            if (!wordObj) return;
+
+            state.selectedWords[slotIndex] = null;
+            state.bankWords.push(wordObj);
+            playSoundEffect('pop');
+            renderBoard();
+        }
+
+        function clearAllSlots() {
+            if (state.isQuestionResolved) return;
+            state.selectedWords.forEach((wordObj, idx) => {
+                if (wordObj) {
+                    state.bankWords.push(wordObj);
+                    state.selectedWords[idx] = null;
+                }
+            });
+            playSoundEffect('pop');
+            renderBoard();
+        }
+
+        /**
+         * ============================================================================
+         * 6. ANSWER CHECKING, ATTEMPT LIMITS & RESULT LOGIC
+         * ============================================================================
+         */
+        /**
+         * Normalizes text for reliable comparison (unifies apostrophes and trims extra spaces).
+         */
+        function normalizeSentenceText(str) {
+            return str
+                .replace(/[\u2018\u2019\u201B\u2032]/g, "'")
+                .replace(/\s+/g, ' ')
+                .trim();
+        }
+
+        /**
+         * Validates the student's constructed sentence against the target sentence.
+         */
+        function checkAnswer() {
+            if (state.isQuestionResolved) return;
+            if (state.selectedWords.some(w => w === null)) return;
+
+            const currentQ = state.questions[state.currentIndex];
+            const userSentence = normalizeSentenceText(state.selectedWords.map(w => w.text).join(' '));
+            const targetSentence = normalizeSentenceText(currentQ.words.join(' '));
+
+            if (userSentence === targetSentence) {
+                handleCorrectAnswer(currentQ);
+            } else {
+                handleWrongAnswer(currentQ);
+            }
+        }
+
+        function handleCorrectAnswer(currentQ) {
+            state.isQuestionResolved = true;
+
+            // Record result: Only counts as "Correct" in final stats if NO mistakes were made on this question
+            const isFirstTrySuccess = !state.madeMistakeOnCurrent;
+            state.results.push({
+                sentence: currentQ.sentence,
+                isCorrect: isFirstTrySuccess,
+                attemptsUsed: (MAX_ATTEMPTS - state.attemptsLeft) + 1
+            });
+
+            // Pick a random praise phrase from the required list
+            const randomPraise = PRAISE_PHRASES[Math.floor(Math.random() * PRAISE_PHRASES.length)];
+
+            // Play celebratory chime & speak praise
+            playSoundEffect('success');
+            setTimeout(() => {
+                speakText(`${randomPraise}!`, 0.9, false);
+            }, 350);
+
+            // Trigger confetti celebration
+            if (typeof confetti === 'function') {
+                confetti({
+                    particleCount: 55,
+                    spread: 65,
+                    origin: { y: 0.7 }
+                });
+            }
+
+            // Show Praise Banner
+            showFeedbackBanner(
+                'success',
+                `🎉 ${randomPraise}!`,
+                isFirstTrySuccess
+                    ? 'Perfect! You solved it on your first try.'
+                    : 'You arranged the sentence correctly!'
+            );
+
+            // Switch buttons to Next Question
+            renderBoard();
+            dom.clearSlotsBtn.classList.add('hidden');
+            dom.checkAnswerBtn.classList.add('hidden');
+            dom.nextQuestionBtn.classList.remove('hidden');
+            dom.nextBtnText.textContent = state.currentIndex === state.questions.length - 1
+                ? 'See Final Results'
+                : 'Next Question';
+        }
+
+        function handleWrongAnswer(currentQ) {
+            state.madeMistakeOnCurrent = true;
+            state.attemptsLeft -= 1;
+            renderAttemptsHearts();
+            playSoundEffect('error');
+
+            // Shake animation on answer box
+            dom.answerSlotsContainer.classList.remove('animate-shake');
+            void dom.answerSlotsContainer.offsetWidth; // Trigger reflow
+            dom.answerSlotsContainer.classList.add('animate-shake');
+
+            if (state.attemptsLeft > 0) {
+                // Reset current question slots & re-scramble words for the next attempt
+                state.selectedWords = new Array(currentQ.words.length).fill(null);
+                state.bankWords = scrambleSentenceWords(currentQ.words);
+                renderBoard();
+
+                showFeedbackBanner(
+                    'warning',
+                    'Not quite right! Try again.',
+                    `The sentence has been reset. You have ${state.attemptsLeft} ${state.attemptsLeft === 1 ? 'try' : 'tries'} remaining.`
+                );
+            } else {
+                // Exceeded 3 allowed attempts -> Mark question wrong and reveal the correct answer
+                state.isQuestionResolved = true;
+                state.results.push({
+                    sentence: currentQ.sentence,
+                    isCorrect: false,
+                    attemptsUsed: MAX_ATTEMPTS
+                });
+
+                // Populate slots with the true correct answer so student can see & study it
+                state.selectedWords = currentQ.words.map((word, idx) => ({
+                    id: `revealed-${idx}`,
+                    text: word
+                }));
+                state.bankWords = [];
+                renderBoard();
+
+                showFeedbackBanner(
+                    'error',
+                    'Out of tries! Here is the correct sentence:',
+                    `"${currentQ.sentence}"`
+                );
+
+                // Read the correct answer aloud so the student learns it
+                setTimeout(() => {
+                    speakText(currentQ.sentence, 0.78, true);
+                }, 400);
+
+                dom.clearSlotsBtn.classList.add('hidden');
+                dom.checkAnswerBtn.classList.add('hidden');
+                dom.nextQuestionBtn.classList.remove('hidden');
+                dom.nextBtnText.textContent = state.currentIndex === state.questions.length - 1
+                    ? 'See Final Results'
+                    : 'Next Question';
+            }
+        }
+
+        function showFeedbackBanner(type, title, subtitle) {
+            dom.feedbackBanner.classList.remove(
+                'hidden',
+                'bg-emerald-50', 'border-emerald-300', 'text-emerald-800',
+                'bg-amber-50', 'border-amber-300', 'text-amber-800',
+                'bg-rose-50', 'border-rose-300', 'text-rose-800'
+            );
+
+            if (type === 'success') {
+                dom.feedbackBanner.classList.add('bg-emerald-50', 'border-emerald-300', 'text-emerald-800');
+            } else if (type === 'warning') {
+                dom.feedbackBanner.classList.add('bg-amber-50', 'border-amber-300', 'text-amber-800');
+            } else {
+                dom.feedbackBanner.classList.add('bg-rose-50', 'border-rose-300', 'text-rose-800');
+            }
+
+            dom.feedbackTitle.textContent = title;
+            dom.feedbackSubtitle.textContent = subtitle;
+        }
+
+        function hideFeedbackBanner() {
+            dom.feedbackBanner.classList.add('hidden');
+        }
+
+        function advanceToNextQuestion() {
+            if (state.currentIndex + 1 < state.questions.length) {
+                loadQuestion(state.currentIndex + 1);
+            } else {
+                showFinalResults();
+            }
+        }
+
+        function showFinalResults() {
+            window.speechSynthesis.cancel();
+            dom.progressBarFill.style.width = '100%';
+
+            dom.quizScreen.classList.add('hidden');
+            dom.headerProgressBadge.classList.add('hidden');
+            dom.headerProgressBadge.classList.remove('flex');
+            dom.resultsScreen.classList.remove('hidden');
+
+            const total = state.results.length;
+            const correctCount = state.results.filter(r => r.isCorrect).length;
+            const incorrectCount = total - correctCount;
+
+            dom.statTotal.textContent = total;
+            dom.statCorrect.textContent = correctCount;
+            dom.statIncorrect.textContent = incorrectCount;
+
+            const percentage = Math.round((correctCount / total) * 100);
+            if (percentage === 100) {
+                dom.resultsSummaryText.textContent = "Outstanding! You answered every single sentence correctly on the first try!";
+                if (typeof confetti === 'function') {
+                    confetti({ particleCount: 90, spread: 80, origin: { y: 0.6 } });
+                }
+            } else if (percentage >= 70) {
+                dom.resultsSummaryText.textContent = `Great effort! You scored ${percentage}% accuracy on your first attempts.`;
+            } else {
+                dom.resultsSummaryText.textContent = `Keep practicing! Review the highlighted sentences below and try again.`;
+            }
+
+            // Build detailed sentence breakdown list
+            dom.resultsBreakdownList.innerHTML = '';
+            state.results.forEach((item, idx) => {
+                const row = document.createElement('div');
+                row.className = `p-3.5 rounded-2xl border flex items-center justify-between gap-3 ${
+                    item.isCorrect
+                        ? 'bg-emerald-50/70 border-emerald-200'
+                        : 'bg-rose-50/70 border-rose-200'
+                }`;
+
+                row.innerHTML = `
+                    <div class="flex items-start gap-3">
+                        <div class="w-7 h-7 rounded-full flex items-center justify-center shrink-0 mt-0.5 text-sm font-bold ${
+                            item.isCorrect
+                                ? 'bg-emerald-500 text-white'
+                                : 'bg-rose-500 text-white'
+                        }">
+                            <i class="fa-solid ${item.isCorrect ? 'fa-check' : 'fa-xmark'}"></i>
+                        </div>
+                        <div>
+                            <div class="text-xs font-bold uppercase tracking-wider ${
+                                item.isCorrect ? 'text-emerald-700' : 'text-rose-700'
+                            }">
+                                Question ${idx + 1} &bull; ${item.isCorrect ? 'Correct' : 'Incorrect'}
+                            </div>
+                            <p class="text-sm sm:text-base font-semibold text-slate-800 mt-0.5">${item.sentence}</p>
+                        </div>
+                    </div>
+                    <button type="button" class="replay-result-audio shrink-0 w-9 h-9 rounded-xl bg-white hover:bg-sky-50 border border-slate-200 text-sky-600 flex items-center justify-center shadow-2xs cursor-pointer" title="Listen to sentence">
+                        <i class="fa-solid fa-volume-high text-sm"></i>
+                    </button>
+                `;
+
+                const audioBtn = row.querySelector('.replay-result-audio');
+                audioBtn.addEventListener('click', () => {
+                    speakText(item.sentence, 0.78, false);
+                });
+
+                dom.resultsBreakdownList.appendChild(row);
+            });
+        }
+
+        /**
+         * ============================================================================
+         * 7. EVENT LISTENERS & KEYBOARD SHORTCUTS (DESKTOP & MOBILE SUPPORT)
+         * ============================================================================
+         */
+        dom.startBtn.addEventListener('click', startExercise);
+        dom.restartBtn.addEventListener('click', startExercise);
+
+        dom.listenSentenceBtn.addEventListener('click', () => {
+            const currentQ = state.questions[state.currentIndex];
+            if (currentQ) speakText(currentQ.sentence, 0.78, true);
+        });
+
+        dom.listenSlowBtn.addEventListener('click', () => {
+            const currentQ = state.questions[state.currentIndex];
+            if (currentQ) speakText(currentQ.sentence, 0.58, true);
+        });
+
+        dom.clearSlotsBtn.addEventListener('click', clearAllSlots);
+        dom.checkAnswerBtn.addEventListener('click', checkAnswer);
+        dom.nextQuestionBtn.addEventListener('click', advanceToNextQuestion);
+
+        // Keyboard Support: Press Enter to Check Answer or proceed to Next Question
+        document.addEventListener('keydown', (event) => {
+            // Only active when Quiz Screen is visible
+            if (dom.quizScreen.classList.contains('hidden')) return;
+
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                if (!state.isQuestionResolved) {
+                    // Check answer if all slots are filled
+                    if (!dom.checkAnswerBtn.disabled) {
+                        checkAnswer();
+                    }
+                } else {
+                    // Move to next question if current question is already resolved
+                    advanceToNextQuestion();
+                }
+            } else if (event.key === 'Backspace' && !state.isQuestionResolved) {
+                // Convenience: Backspace removes the last filled word on desktop
+                for (let i = state.selectedWords.length - 1; i >= 0; i--) {
+                    if (state.selectedWords[i] !== null) {
+                        event.preventDefault();
+                        removeWordFromSlot(i);
+                        break;
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>
